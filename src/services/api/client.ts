@@ -1,6 +1,6 @@
 /**
- * Axios API 客户端
- * 替代原项目 src/core/api-client.js
+ * Axios API client
+ * Replaces src/core/api-client.js from the original project
  */
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
@@ -33,7 +33,7 @@ class ApiClient {
   }
 
   /**
-   * 设置 API 配置
+   * Set the API configuration
    */
   setConfig(config: ApiClientConfig): void {
     this.apiBase = computeApiUrl(config.apiBase);
@@ -98,16 +98,16 @@ class ApiClient {
   }
 
   /**
-   * 设置请求/响应拦截器
+   * Set up request/response interceptors
    */
   private setupInterceptors(): void {
-    // 请求拦截器
+    // Request interceptor
     this.instance.interceptors.request.use(
       (config) => {
-        // 设置 baseURL
+        // Set baseURL
         config.baseURL = this.apiBase;
 
-        // 添加认证头
+        // Add auth header
         if (this.managementKey) {
           config.headers.Authorization = `Bearer ${this.managementKey}`;
         }
@@ -117,7 +117,7 @@ class ApiClient {
       (error) => Promise.reject(this.handleError(error))
     );
 
-    // 响应拦截器
+    // Response interceptor
     this.instance.interceptors.response.use(
       (response) => {
         const headers = response.headers as Record<string, string | undefined>;
@@ -127,7 +127,7 @@ class ApiClient {
         const buildDate = cpaBuildDate || this.readHeader(headers, BUILD_DATE_HEADER_KEYS);
         const supportsPlugin = this.readBooleanHeader(headers, CPA_SUPPORT_PLUGIN_HEADER_KEYS);
 
-        // 触发版本更新事件（后续通过 store 处理）
+        // Emit a version-update event (handled later by the store)
         if (version || buildDate) {
           window.dispatchEvent(
             new CustomEvent('server-version-update', {
@@ -150,7 +150,7 @@ class ApiClient {
   }
 
   /**
-   * 错误处理
+   * Error handling
    */
   private handleError(error: unknown): ApiError {
     if (axios.isAxiosError(error)) {
@@ -164,7 +164,7 @@ class ApiClient {
       apiError.details = responseData;
       apiError.data = responseData;
 
-      // 401 未授权 - 触发登出事件
+      // 401 Unauthorized - emit a logout event
       if (error.response?.status === 401) {
         window.dispatchEvent(new Event('unauthorized'));
       }
@@ -184,7 +184,7 @@ class ApiClient {
   }
 
   /**
-   * GET 请求
+   * GET request
    */
   async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.instance.get<T>(url, config);
@@ -192,7 +192,7 @@ class ApiClient {
   }
 
   /**
-   * POST 请求
+   * POST request
    */
   async post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.instance.post<T>(url, data, config);
@@ -200,7 +200,7 @@ class ApiClient {
   }
 
   /**
-   * PUT 请求
+   * PUT request
    */
   async put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.instance.put<T>(url, data, config);
@@ -208,7 +208,7 @@ class ApiClient {
   }
 
   /**
-   * PATCH 请求
+   * PATCH request
    */
   async patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.instance.patch<T>(url, data, config);
@@ -216,7 +216,7 @@ class ApiClient {
   }
 
   /**
-   * DELETE 请求
+   * DELETE request
    */
   async delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.instance.delete<T>(url, config);
@@ -224,14 +224,14 @@ class ApiClient {
   }
 
   /**
-   * 获取原始响应（用于下载等场景）
+   * Get the raw response (for downloads and similar cases)
    */
   async getRaw(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse> {
     return this.instance.get(url, config);
   }
 
   /**
-   * 发送 FormData
+   * Send FormData
    */
   async postForm<T = unknown>(
     url: string,
@@ -249,5 +249,5 @@ class ApiClient {
   }
 }
 
-// 导出单例
+// Export singleton
 export const apiClient = new ApiClient();

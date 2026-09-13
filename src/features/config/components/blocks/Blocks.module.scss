@@ -1,9 +1,11 @@
 @use '../../../../styles/mixins' as *;
 
-/* 区块编辑器（API 密钥 / 字符串列表 / 插件源认证 / 载荷规则）的共享样式。
-   规则从旧 VisualConfigEditor.module.scss 收编，几何统一到 10px 圆角并引用动效 tokens。 */
+/* Shared styles for the block editors (API keys / string lists / plugin source auth / payload
+   rules).
+   Rules were folded in from the old VisualConfigEditor.module.scss; geometry unified to a 10px
+   radius and motion tokens referenced. */
 
-/* ---------- 可展开输入 ---------- */
+/* ---------- Expandable input ---------- */
 
 .expandableInputWrapper {
   position: relative;
@@ -60,7 +62,7 @@
   transform: none;
 }
 
-/* ---------- 通用块布局 ---------- */
+/* ---------- Common block layout ---------- */
 
 .blockHeaderRow {
   display: flex;
@@ -97,7 +99,7 @@
   background: transparent;
 }
 
-/* ---------- 规则卡 ---------- */
+/* ---------- Rule card ---------- */
 
 .ruleCard {
   display: flex;
@@ -124,7 +126,7 @@
   line-height: 1.25;
 }
 
-/* ---------- 字符串列表 ---------- */
+/* ---------- String list ---------- */
 
 .stringList {
   display: flex;
@@ -139,7 +141,7 @@
   flex-wrap: wrap;
 }
 
-/* ---------- API 密钥弹窗 ---------- */
+/* ---------- API key modal ---------- */
 
 .apiKeyModalInputRow {
   display: flex;
@@ -151,8 +153,8 @@
   }
 }
 
-/* 强度参考条：四段承载档位，颜色承载严重度。
-   段的填充走 scaleX（只碰 transform），键入时逐字重算也不掉帧。 */
+/* Strength meter: four segments carry the tier, color carries the severity.
+   Segment fill uses scaleX (transform only), so per-keystroke recomputation never drops frames. */
 
 .strengthMeter {
   display: flex;
@@ -171,7 +173,7 @@
   height: 4px;
   border-radius: $radius-full;
   overflow: hidden;
-  // 轨道 = 填充色的淡化步阶，未点亮的段也带着当前状态
+  // Track = a faded step of the fill color, so unlit segments still carry the current state
   background: color-mix(in srgb, var(--strength-color) 16%, transparent);
   transition: background-color var(--dur-hover, 200ms) var(--ease-out-strong, ease-out);
 }
@@ -183,18 +185,19 @@
   background: var(--strength-color);
   transform: scaleX(0);
   transform-origin: left center;
-  // 段内比常规交互再快一档，把预算让给段间的 stagger
+  // One notch faster than regular interactions, leaving budget for the inter-segment stagger
   transition:
     transform var(--dur-press, 160ms) var(--ease-out-strong, ease-out),
     background-color var(--dur-hover, 200ms) var(--ease-out-strong, ease-out);
 
-  // 延迟写在目标态上：点亮时依次排队，熄灭是系统响应，立刻发生
+  // Delay lives on the target state: lighting up queues in sequence; going dark is a system
+  // response and happens immediately
   &[data-filled='true'] {
     transform: scaleX(1);
     transition-delay: var(--segment-delay, 0ms);
   }
 
-  // 降级只去掉位移和排队，颜色变化保留（它才是状态本身）
+  // Reduced motion only drops the movement and queueing; the color change stays (it IS the state)
   @media (prefers-reduced-motion: reduce) {
     transition: background-color var(--dur-hover, 200ms) linear;
 
@@ -212,7 +215,7 @@
   transition: color var(--dur-hover, 200ms) var(--ease-out-strong, ease-out);
 }
 
-/* ---------- 插件源认证 ---------- */
+/* ---------- Plugin source auth ---------- */
 
 .storeAuthEditor {
   display: flex;
@@ -319,7 +322,7 @@
   }
 }
 
-/* ---------- 载荷规则 ---------- */
+/* ---------- Payload rules ---------- */
 
 .payloadRuleModelRow {
   display: grid;
@@ -399,7 +402,7 @@
   justify-self: start;
 }
 
-/* ---------- 响应式 ---------- */
+/* ---------- Responsive ---------- */
 
 @media (max-width: 900px) {
   .payloadRuleModelRow,
@@ -455,7 +458,7 @@
   }
 }
 
-/* ---------- 无障碍 ---------- */
+/* ---------- Accessibility ---------- */
 
 @media (prefers-reduced-motion: reduce) {
   .expandableToggle {

@@ -9,8 +9,8 @@ export type ModeSwitchProps = {
 };
 
 /**
- * 可视化 / 源码 segmented 切换。源码模式是整份文档的另一种表示（不是第 9 个分区），
- * 所以它不进 tabs，常驻 tabs 行右端（移动端上移到头部动作行）。
+ * Visual/source mode switch. Source represents the whole document, so the switch sits beside the
+ * section tabs and moves to the header actions on mobile.
  */
 export function ModeSwitch({ mode, disabled = false, onChange }: ModeSwitchProps) {
   const { t } = useTranslation();

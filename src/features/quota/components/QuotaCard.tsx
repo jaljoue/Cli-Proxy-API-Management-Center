@@ -1,10 +1,11 @@
 /**
- * 额度卡片：头部（提供商图标 + mono 文件名）+ 四态 body + 动作 footer。
+ * Quota card: header (provider icon + mono file name) + four-state body + action footer.
  *
- * - idle：整个 body 是一个点击加载按钮（上游直连有速率考虑，不自动拉取）；
- * - loading：双幽灵行骨架（aria-busy，文字等价视觉隐藏）；
- * - error：失败色条 + footer 刷新即重试；
- * - success：provider Body（穿 QuotaBody.module.scss 全页外衣）。
+ * - idle: the whole body is a click-to-load button (direct upstream calls have rate concerns,
+ *   so no auto fetch);
+ * - loading: two ghost-row skeleton (aria-busy, visually hidden text equivalent);
+ * - error: failure color bar + footer refresh retries;
+ * - success: provider Body (wearing the full-page QuotaBody.module.scss skin).
  */
 
 import { useState, type CSSProperties } from 'react';
@@ -24,16 +25,20 @@ import { isQuotaRefreshDisabled, type QuotaFileEntry } from '../logic';
 import bodyStyles from './QuotaBody.module.scss';
 import styles from './QuotaCard.module.scss';
 
-/** 额度页全页外衣：QuotaBody 模块绑定成类型化契约（缺键在模块初始化即抛）。 */
+/** Full-page quota skin: the QuotaBody module bound as a typed contract (missing keys throw at
+ * module init). */
 const quotaClasses = bindQuotaClasses(bodyStyles, 'QuotaBody.module.scss');
 
 export type QuotaCardProps = {
   entry: QuotaFileEntry;
   quota?: QuotaCardState;
+  /** Title shown for the credential; defaults to the file name (may be masked by the page). */
+  displayName?: string;
   resolvedTheme: ResolvedTheme;
   canRefresh: boolean;
   resetting: boolean;
-  /** 首屏级联入场延迟；null = 不入场（切 tab / 翻页 / 刷新新挂载的卡片）。 */
+  /** Staggered first-paint entrance delay; null = no entrance (tab switch / paging / cards newly
+   * mounted by refresh). */
   entranceDelayMs?: number | null;
   onRefresh: () => void;
   onReset: () => void;
@@ -43,6 +48,7 @@ export function QuotaCard(props: QuotaCardProps) {
   const {
     entry,
     quota,
+    displayName,
     resolvedTheme,
     canRefresh,
     resetting,
@@ -54,7 +60,8 @@ export function QuotaCard(props: QuotaCardProps) {
   const adapter = QUOTA_ADAPTERS[entry.type];
   const file = entry.file;
 
-  // 挂载时捕获一次延迟：后续 props 变 null 不影响本卡（React 19 禁渲染期读 ref）
+  // Capture the delay once on mount: a later null prop does not affect this card (React 19 forbids
+  // reading refs during render)
   const [mountEntranceDelayMs] = useState<number | null>(entranceDelayMs ?? null);
   const entranceStyle =
     mountEntranceDelayMs === null
@@ -97,8 +104,8 @@ export function QuotaCard(props: QuotaCardProps) {
             <span className={styles.iconFallback}>{typeLabel.slice(0, 1).toUpperCase()}</span>
           )}
         </span>
-        <span className={styles.fileName} title={file.name}>
-          {file.name}
+        <span className={styles.fileName} title={displayName ?? file.name}>
+          {displayName ?? file.name}
         </span>
       </header>
 

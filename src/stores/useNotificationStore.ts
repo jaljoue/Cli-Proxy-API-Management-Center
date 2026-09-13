@@ -1,7 +1,4 @@
-/**
- * 通知状态管理
- * 替代原项目中的 showNotification 方法
- */
+/** Notification state, replacing the original showNotification function. */
 
 import { create } from 'zustand';
 import type { ReactNode } from 'react';
@@ -54,7 +51,7 @@ export const useNotificationStore = create<NotificationState>((set) => ({
       notifications: [...state.notifications, notification],
     }));
 
-    // 自动移除通知
+    // Remove notifications automatically.
     if (duration > 0) {
       setTimeout(() => {
         set((state) => ({

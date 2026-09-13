@@ -62,7 +62,8 @@ describe('niceCeil', () => {
 
 describe('axisMax', () => {
   test('lands every gridline on a whole number', () => {
-    // 峰值 112 → 上限 120（刻度 0/30/60/90/120），而不是浪费半张图的 200
+    // A peak of 112 yields a ceiling of 120 with ticks at 0/30/60/90/120, avoiding excess space
+    // up to 200.
     expect(axisMax(112, 4)).toBe(120);
     expect(axisMax(7, 4)).toBe(8);
     expect(axisMax(1533, 4)).toBe(1600);
@@ -72,10 +73,10 @@ describe('axisMax', () => {
     for (const peak of [1, 3, 9, 17, 64, 112, 250, 999, 4321]) {
       const max = axisMax(peak, 4);
       expect(max).toBeGreaterThanOrEqual(peak);
-      // 上限不应超过峰值的两倍，否则柱子被压得太矮。
-      // 峰值极小时受「每格至少 1」约束，下限就是间隔数本身。
+      // Keep the ceiling within twice the peak so bars remain readable.
+      // For tiny peaks, integer steps require a minimum ceiling equal to the interval count.
       expect(max).toBeLessThanOrEqual(Math.max(4, peak * 2));
-      // 每格都必须是整数
+      // Each step must be an integer.
       expect(Number.isInteger(max / 4)).toBe(true);
     }
   });

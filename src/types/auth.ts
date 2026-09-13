@@ -1,16 +1,16 @@
 /**
- * 认证相关类型定义
- * 基于原项目 src/modules/login.js 和 src/core/connection.js
+ * Authentication-related type definitions
+ * Based on the original project's src/modules/login.js and src/core/connection.js
  */
 
-// 登录凭据
+// Login credentials
 export interface LoginCredentials {
   apiBase: string;
   managementKey: string;
   rememberPassword?: boolean;
 }
 
-// 认证状态
+// Authentication state
 export interface AuthState {
   isAuthenticated: boolean;
   apiBase: string;
@@ -21,5 +21,5 @@ export interface AuthState {
   supportsPlugin: boolean;
 }
 
-// 连接状态
+// Connection status
 export type ConnectionStatus = 'connected' | 'disconnected' | 'connecting' | 'error';

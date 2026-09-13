@@ -1,6 +1,4 @@
-/**
- * Kimi 额度数据层。React-free / SCSS-free。
- */
+/** Kimi quota data without React or SCSS dependencies. */
 
 import type { TFunction } from 'i18next';
 import type { AuthFileItem, KimiQuotaRow, KimiQuotaState } from '@/types';

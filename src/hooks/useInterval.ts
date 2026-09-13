@@ -1,6 +1,4 @@
-/**
- * 定时器 Hook
- */
+/** Interval hook. */
 
 import { useEffect, useRef } from 'react';
 

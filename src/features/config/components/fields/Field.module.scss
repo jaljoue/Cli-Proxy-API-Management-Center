@@ -1,9 +1,11 @@
 @use '../../../../styles/mixins' as *;
 
-/* 字段原语：表单控件的 scoped 覆盖 + 开关行 / 网格 / 字段组 / 搜索锚点。
-   交互反馈一律引用全局动效 tokens（--dur-* / --ease-out-strong）。 */
+/*
+ * Scoped form controls, toggle rows, grids, groups and search anchors. Use global motion tokens
+ * --dur-* and --ease-out-strong for interaction feedback.
+ */
 
-/* ---------- 表单控件宿主（原 .visualEditor 的 :global 覆盖收编于此） ---------- */
+/* Form-control host for the former .visualEditor's :global overrides. */
 
 .fieldsRoot {
   :global(.form-group) {
@@ -78,7 +80,7 @@
   }
 }
 
-/* ---------- 开关行 ---------- */
+/* Toggle rows. */
 
 .toggleRow {
   display: grid;
@@ -126,7 +128,7 @@
   line-height: 1.55;
 }
 
-/* ---------- 布局原语 ---------- */
+/* Layout helpers. */
 
 .fieldGrid {
   display: grid;
@@ -149,7 +151,7 @@
   background: var(--border-color);
 }
 
-/* ---------- 搜索锚点与脉冲高亮 ---------- */
+/* Search anchors and pulse highlight. */
 
 .fieldAnchor {
   display: block;
@@ -157,7 +159,7 @@
   scroll-margin-top: calc(var(--header-height, 64px) + 16px);
 }
 
-/* 跨两列的字段（如长文本的代理 URL）；移动端单列布局下回退为一列。 */
+/* Wide fields span two columns and fall back to one on mobile. */
 .fieldAnchorWide {
   grid-column: span 2;
 
@@ -166,164 +168,7 @@
   }
 }
 
-/* 字段标签下方的赞助跳转小字行（代理 URL 字段）。 */
-.fieldSponsorHint {
-  margin: -2px 0 0;
-  color: var(--text-secondary);
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-/* 与赞助行同字号同高度的隐形占位：同排右侧字段用它补齐标签区高度，让输入框与代理 URL 对齐。
-   移动端单列堆叠时无需对齐，直接隐藏。 */
-.fieldSponsorSpacer {
-  margin: -2px 0 0;
-  font-size: 12px;
-  line-height: 1.5;
-  visibility: hidden;
-
-  @include mobile {
-    display: none;
-  }
-}
-
-/* 与正文融为一体的高亮链接：同字号，复用全站金色（amber）badge 配方，hover 底色加深。 */
-.fieldSponsorLink {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 1px 5px;
-  border: 1px solid var(--amber-30);
-  border-radius: 5px;
-  background: var(--amber-10);
-  color: var(--amber-text);
-  font-weight: 600;
-  text-decoration: none;
-  vertical-align: baseline;
-  transition: background-color 0.15s ease;
-
-  &:hover {
-    background: var(--amber-30);
-    text-decoration: none;
-  }
-}
-
-.fieldSponsorLogo {
-  display: block;
-  width: auto;
-  height: 13px;
-}
-
-.fieldHighlightActive {
-  border-radius: 10px;
-  animation: config-field-highlight 1.8s ease-out;
-}
-
-@keyframes config-field-highlight {
-  0% {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-primary) 55%, transparent);
-  }
-  55% {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-primary) 32%, transparent);
-  }
-  100% {
-    box-shadow: 0 0 0 3px transparent;
-  }
-}
-
-/* ---------- 字段组（原 subsection） ---------- */
-
-.group {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  background: transparent;
-}
-
-.groupHeader {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.groupTitle {
-  margin: 0;
-  color: var(--text-primary);
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.25;
-}
-
-.groupDescription {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-/* ---------- 字段外壳 ---------- */
-
-.fieldShell {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  min-width: 0;
-}
-
-.fieldLabel {
-  color: var(--text-secondary);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.fieldControl {
-  position: relative;
-}
-
-.fieldHint {
-  color: var(--text-secondary);
-  font-size: 12px;
-  line-height: 1.55;
-}
-
-.inlinePill {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  padding: 0 8px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background: var(--bg-primary);
-  color: var(--text-secondary);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-/* ---------- 响应式 ---------- */
-
-@include mobile {
-  .group,
-  .toggleRow {
-    padding: 14px;
-  }
-}
-
-@media (max-width: 380px) {
-  .group,
-  .toggleRow {
-    padding: 12px;
-  }
-}
-
-/* ---------- 无障碍 ---------- */
+/* Accessibility. */
 
 @media (prefers-reduced-motion: reduce) {
   .fieldsRoot :global(.input),

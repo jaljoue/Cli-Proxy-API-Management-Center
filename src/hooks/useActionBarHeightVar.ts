@@ -1,8 +1,8 @@
 import { useLayoutEffect, type RefObject } from 'react';
 
 /**
- * 将悬浮操作条的实时高度同步到根元素 CSS 变量，供页面底部留白使用。
- * active 为 false 或元素未挂载时清除变量。
+ * Sync the floating action bar's measured height to a root CSS variable for bottom spacing.
+ * Clear it when inactive or unmounted.
  */
 export function useActionBarHeightVar(
   ref: RefObject<HTMLElement | null>,

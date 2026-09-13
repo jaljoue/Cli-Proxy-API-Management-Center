@@ -47,7 +47,7 @@ function App() {
   useEffect(() => {
     setLanguage(language);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // 仅用于首屏同步 i18n 语言
+  }, []); // Only syncs the i18n language on first paint
 
   useEffect(() => {
     document.documentElement.lang = language;

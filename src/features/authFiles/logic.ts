@@ -1,6 +1,6 @@
 /**
- * 认证文件列表纯逻辑：通配搜索、字段匹配、排序。
- * React-free —— 由 tests/authFilesListLogic.test.ts 直接消费。
+ * Pure logic for the auth file list: wildcard search, field matching, sorting.
+ * React-free -- consumed directly by tests/authFilesListLogic.test.ts.
  */
 
 import type { AuthFileItem } from '@/types';
@@ -10,7 +10,8 @@ import type { AuthFilesSortMode } from './uiState';
 
 const escapeWildcardSearchSegment = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/** 不含 '*' 时返回 null（走 includes 路径）。刻意不加 ^/$ 锚点——保持子串语义。 */
+/** Returns null without '*' (includes path). Deliberately no ^/$ anchors, keeping substring
+ *  semantics. */
 export const buildWildcardSearch = (value: string): RegExp | null => {
   if (!value.includes('*')) return null;
   const pattern = value.split('*').map(escapeWildcardSearchSegment).join('.*');
@@ -18,8 +19,8 @@ export const buildWildcardSearch = (value: string): RegExp | null => {
 };
 
 /**
- * 搜索 haystack：文件名 + 类型 + 提供方 + 账号邮箱 + 项目 ID。
- * 显式不含 account —— api-key 凭证的 account 就是 API key 本身，见 identity.ts。
+ * Search haystack: file name + type + provider + account email + project ID.
+ * Explicitly excludes account -- for api-key credentials it IS the API key; see identity.ts.
  */
 export const matchesAuthFileSearch = (
   file: AuthFileItem,
@@ -34,7 +35,7 @@ export const matchesAuthFileSearch = (
   });
 };
 
-/** 返回新数组，不改动入参。未知 mode 原序返回拷贝。 */
+/** Returns a new array without mutating the input. Unknown modes return an unsorted copy. */
 export const sortAuthFiles = (files: AuthFileItem[], mode: AuthFilesSortMode): AuthFileItem[] => {
   const copy = [...files];
   if (mode === 'default') {
@@ -46,8 +47,9 @@ export const sortAuthFiles = (files: AuthFileItem[], mode: AuthFilesSortMode): A
       return a.name.localeCompare(b.name);
     });
   } else if (mode === 'az') {
-    // 按卡片主行排（有账号时即 email），所见即所排；同值用文件名决胜。
-    // 装饰一次，避免在比较器里重复派生。
+    // Sort by the card's primary line (email when present) so what you see is the sort order;
+    // ties broken by file name.
+    // Decorate once to avoid re-deriving inside the comparator.
     const keys = new Map(copy.map((file) => [file, deriveAuthFileIdentity(file).primary]));
     copy.sort(
       (a, b) => (keys.get(a) ?? '').localeCompare(keys.get(b) ?? '') || a.name.localeCompare(b.name)
@@ -56,7 +58,7 @@ export const sortAuthFiles = (files: AuthFileItem[], mode: AuthFilesSortMode): A
     copy.sort((a, b) => {
       const pa = typeof a.priority === 'number' ? a.priority : 0;
       const pb = typeof b.priority === 'number' ? b.priority : 0;
-      return pb - pa; // 高优先级排前面
+      return pb - pa; // higher priority first
     });
   }
   return copy;

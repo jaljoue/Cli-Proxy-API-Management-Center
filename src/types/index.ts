@@ -1,5 +1,5 @@
 /**
- * 类型定义统一导出
+ * Unified type definition exports
  */
 
 export * from './common';

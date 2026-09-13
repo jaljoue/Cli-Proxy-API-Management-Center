@@ -11,7 +11,10 @@ import type { AuthFileModelItem } from '@/features/authFiles/constants';
 
 interface AuthFileExcludedModelsFieldProps {
   fileName: string;
-  /** 换行分隔的规则文本——凭证编辑器的 dirty diff 依赖这个形状，不要改成数组。 */
+  /**
+   * Newline-separated rules. The credential editor's dirty comparison depends on this shape; do
+   * not replace it with an array.
+   */
   value: string;
   disabled: boolean;
   onChange: (value: string) => void;
@@ -24,7 +27,7 @@ export function AuthFileExcludedModelsField({
   onChange,
 }: AuthFileExcludedModelsFieldProps) {
   const { t } = useTranslation();
-  // 凭证文件名可能含点/斜杠等字符，不适合直接当 HTML id。
+  // Credential filenames may contain dots or slashes, so do not use them directly as HTML IDs.
   const labelId = `${useId()}-excluded-models-label`;
   const latestValueRef = useRef(value);
   const [models, setModels] = useState<AuthFileModelItem[]>([]);
@@ -50,7 +53,8 @@ export function AuthFileExcludedModelsField({
           const id = item.id?.trim();
           if (id) byId.set(id.toLowerCase(), { ...item, id });
         });
-        // 已配置但目录里没有的精确规则也塞进候选，否则它们会在列表里凭空消失。
+        // Include configured exact rules missing from the catalog so they remain visible in the
+        // picker.
         parseExcludedRulesText(latestValueRef.current).forEach((rule) => {
           if (!rule.includes('*') && !byId.has(rule.toLowerCase())) {
             byId.set(rule.toLowerCase(), { id: rule });

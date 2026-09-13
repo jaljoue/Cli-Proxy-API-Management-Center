@@ -28,7 +28,7 @@ import {
 import type { OpenAIProviderConfig } from '@/types';
 import type { StatusBarData } from '@/utils/recentRequests';
 import type { ProviderResource } from '../types';
-import { isMultiProtocolSponsorBrand } from '../sponsorDefinitions';
+import { isGroupedProviderBrand } from '../groupedProviders';
 import styles from './ProviderResourceTable.module.scss';
 import statusBarStyles from './providerStatusBar.module.scss';
 
@@ -45,8 +45,8 @@ interface ProviderResourceTableProps {
 
 const columnWidths = ['180px', '220px', '72px', '138px', '174px', '176px'];
 
-const isSponsorResource = (resource: ProviderResource): boolean =>
-  isMultiProtocolSponsorBrand(resource.brand);
+const isGroupedResource = (resource: ProviderResource): boolean =>
+  isGroupedProviderBrand(resource.brand);
 
 const resolveStatusBarData = (
   resource: ProviderResource,
@@ -105,14 +105,14 @@ export function ProviderResourceTable({
 
   const renderProtocolSummary = (r: ProviderResource) =>
     (r.flags.protocols ?? [])
-      .map((protocol) => t(`providersPage.sponsor.protocols.${protocol}`))
+      .map((protocol) => t(`providersPage.grouped.protocols.${protocol}`))
       .join(' / ');
 
   const renderModelsSummary = (r: ProviderResource) => {
     const items: ReactNode[] = [];
-    if (isSponsorResource(r)) {
+    if (isGroupedResource(r)) {
       (r.flags.protocols ?? []).forEach((protocol) => {
-        items.push(renderFlagTag(protocol, t(`providersPage.sponsor.protocols.${protocol}`)));
+        items.push(renderFlagTag(protocol, t(`providersPage.grouped.protocols.${protocol}`)));
       });
       return <div className={styles.metricsCell}>{items}</div>;
     }
@@ -158,7 +158,7 @@ export function ProviderResourceTable({
   };
 
   const renderPrimary = (r: ProviderResource) => {
-    if (isSponsorResource(r)) {
+    if (isGroupedResource(r)) {
       return (
         <div className={styles.primaryCell}>
           <span className={styles.primaryName}>{r.name ?? r.identifier}</span>
@@ -186,7 +186,7 @@ export function ProviderResourceTable({
   };
 
   const renderBaseUrl = (r: ProviderResource) => {
-    if (isSponsorResource(r)) {
+    if (isGroupedResource(r)) {
       return <span className={styles.baseUrl}>{renderProtocolSummary(r)}</span>;
     }
     if (r.brand === 'claude' && !r.baseUrl) {
@@ -235,7 +235,7 @@ export function ProviderResourceTable({
               <TableCell>
                 <div className={styles.statusCell}>
                   {renderStatus(resource)}
-                  {usageByProvider && !isSponsorResource(resource) ? (
+                  {usageByProvider && !isGroupedResource(resource) ? (
                     <>
                       {(() => {
                         const stats = resolveTotalStats(resource, usageByProvider);

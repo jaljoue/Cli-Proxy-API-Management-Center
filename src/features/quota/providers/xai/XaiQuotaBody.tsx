@@ -1,67 +1,23 @@
 /**
- * xAI 额度渲染体：套餐 chip 行（SuperGrok Heavy / 付费档=金卡）、
- * 周/月账单水位条、按量付费余额。
+ * xAI quota body: plan chip row (SuperGrok Heavy / paid tier = gold card),
+ * weekly/monthly billing level bars, pay-as-you-go balance.
  */
 
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { XaiBillingSummary, XaiQuotaState } from '@/types';
+import type { XaiQuotaState } from '@/types';
 import { buildResetDisplay, formatQuotaResetTime, parseIsoToMs } from '@/utils/quota';
 import { useNow } from '@/hooks/useNow';
 import { QuotaMeter } from '../../components/QuotaMeter';
 import { QuotaResetLabel } from '../../components/QuotaResetLabel';
 import { XAI_WEEKLY_ROW_ID, collectQuotaRowInstants, pickUrgentRowId } from '../../resetSchedule';
 import type { QuotaBodyProps } from '../../types';
-
-const formatUsdFromCents = (cents: number | null): string => {
-  if (cents === null) return '--';
-  return new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency: 'USD',
-  }).format(cents / 100);
-};
-
-const formatXaiRemainingAmount = (billing: XaiBillingSummary): string => {
-  const remainingCents =
-    billing.monthlyLimitCents !== null && billing.includedUsedCents !== null
-      ? Math.max(0, billing.monthlyLimitCents - billing.includedUsedCents)
-      : null;
-  const remaining = formatUsdFromCents(remainingCents);
-  const limit = formatUsdFromCents(billing.monthlyLimitCents);
-  if (billing.monthlyLimitCents === null) return remaining;
-  return `${remaining} / ${limit}`;
-};
-
-const formatXaiOnDemandAmount = (billing: XaiBillingSummary): string => {
-  const remainingCents =
-    billing.onDemandCapCents !== null && billing.onDemandUsedCents !== null
-      ? Math.max(0, billing.onDemandCapCents - billing.onDemandUsedCents)
-      : null;
-  const remaining = formatUsdFromCents(remainingCents);
-  const cap = formatUsdFromCents(billing.onDemandCapCents);
-  if (billing.onDemandCapCents === null) return remaining;
-  return `${remaining} / ${cap}`;
-};
-
-const formatXaiPercent = (value: number | null): string => {
-  if (value === null) return '--';
-  return `${Math.round(value)}%`;
-};
-
-const XAI_SUPERGROK_LIMIT_CENTS = 15_000;
-const XAI_SUPERGROK_HEAVY_LIMIT_CENTS = 150_000;
-
-const resolveXaiPlan = (
-  monthlyLimitCents: number | null
-): { labelKey: string; premium: boolean } | null => {
-  if (monthlyLimitCents === XAI_SUPERGROK_LIMIT_CENTS) {
-    return { labelKey: 'plan_supergrok', premium: false };
-  }
-  if (monthlyLimitCents === XAI_SUPERGROK_HEAVY_LIMIT_CENTS) {
-    return { labelKey: 'plan_supergrok_heavy', premium: true };
-  }
-  return null;
-};
+import {
+  formatXaiOnDemandAmount,
+  formatXaiPercent,
+  formatXaiRemainingAmount,
+  resolveXaiPlan,
+} from './presentation';
 
 export function XaiQuotaBody({ quota, classes }: QuotaBodyProps<XaiQuotaState>) {
   const { t, i18n } = useTranslation();

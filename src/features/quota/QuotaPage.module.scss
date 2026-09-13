@@ -1,8 +1,6 @@
 @use '../../styles/mixins' as *;
 
-/* ============================================================
- * 额度页壳层：纯布局，视觉细节都在各组件的 colocated 模块里。
- * ============================================================ */
+/* Quota page layout. Component modules own their visual styles. */
 
 .page {
   display: flex;
@@ -12,7 +10,7 @@
   min-width: 0;
 }
 
-/* ---------- 工作区（tabs + 网格 + 分页） ---------- */
+/* Workspace: tabs, grid and pagination. */
 
 .workbench {
   display: flex;
@@ -21,7 +19,7 @@
   min-width: 0;
 }
 
-/* tabs 与排序同一行：tabs 会自己横向滚动，所以排序固定不压缩。 */
+/* Tabs scroll horizontally; keep the sorting control from shrinking on the same row. */
 
 .tabsRow {
   display: flex;
@@ -35,6 +33,13 @@
   }
 }
 
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
 .sort {
   flex: 0 0 auto;
   min-width: 148px;
@@ -46,8 +51,12 @@
     align-items: stretch;
   }
 
+  .controls {
+    flex-wrap: wrap;
+  }
+
   .sort {
-    width: 100%;
+    flex: 1 1 140px;
   }
 }
 
@@ -62,9 +71,10 @@
   overflow-wrap: anywhere;
 }
 
-/* ---------- 卡片网格 ----------
- * 列宽由 CSS 决定（不再用 JS 测量）：额度卡承载水位条，取 340px 下限，
- * 与认证文件页配额模式（.gridQuota）同一档。 */
+/*
+ * CSS sets card widths with a 340px minimum for quota meters, matching auth-file quota mode's
+ * .gridQuota.
+ */
 
 .grid {
   display: grid;
@@ -73,7 +83,7 @@
   align-items: stretch;
 }
 
-/* ---------- 分页 ---------- */
+/* Pagination. */
 
 .pagination {
   display: flex;

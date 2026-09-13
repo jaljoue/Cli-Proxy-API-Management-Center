@@ -1,8 +1,8 @@
 /**
- * 额度提供商数据层契约。
+ * Quota provider data-layer contract.
  *
- * data.ts 模块只做「取数 + 状态构造」：不 import React、不 import SCSS，
- * 因此可以被 bun:test 纯逻辑测试直接消费。渲染由同目录的 *QuotaBody 组件承担。
+ * data.ts modules only do "fetch + state construction": no React import, no SCSS import,
+ * so pure-logic bun:test tests can consume them directly. Rendering is handled by the sibling *QuotaBody components.
  */
 
 import type { TFunction } from 'i18next';
@@ -12,25 +12,28 @@ import type {
   ClaudeQuotaState,
   CodexQuotaState,
   KimiQuotaState,
+  OpencodeGoQuotaState,
   XaiQuotaState,
 } from '@/types';
 
 export type QuotaUpdater<T> = T | ((prev: T) => T);
 
-export type QuotaProviderType = 'antigravity' | 'claude' | 'codex' | 'kimi' | 'xai';
+export type QuotaProviderType = 'antigravity' | 'claude' | 'codex' | 'kimi' | 'xai' | 'opencode-go';
 
-/** useQuotaStore 的结构契约（storeSelector/storeSetter 依赖）。 */
+/** Structural contract of useQuotaStore (required by storeSelector/storeSetter). */
 export interface QuotaStore {
   antigravityQuota: Record<string, AntigravityQuotaState>;
   claudeQuota: Record<string, ClaudeQuotaState>;
   codexQuota: Record<string, CodexQuotaState>;
   kimiQuota: Record<string, KimiQuotaState>;
   xaiQuota: Record<string, XaiQuotaState>;
+  opencodeGoQuota: Record<string, OpencodeGoQuotaState>;
   setAntigravityQuota: (updater: QuotaUpdater<Record<string, AntigravityQuotaState>>) => void;
   setClaudeQuota: (updater: QuotaUpdater<Record<string, ClaudeQuotaState>>) => void;
   setCodexQuota: (updater: QuotaUpdater<Record<string, CodexQuotaState>>) => void;
   setKimiQuota: (updater: QuotaUpdater<Record<string, KimiQuotaState>>) => void;
   setXaiQuota: (updater: QuotaUpdater<Record<string, XaiQuotaState>>) => void;
+  setOpencodeGoQuota: (updater: QuotaUpdater<Record<string, OpencodeGoQuotaState>>) => void;
   clearQuotaCache: () => void;
 }
 

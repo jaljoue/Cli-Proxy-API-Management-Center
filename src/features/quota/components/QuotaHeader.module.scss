@@ -1,7 +1,9 @@
 @use '../../../styles/mixins' as *;
 
-/* 额度页头部：与凭证库/仪表盘同语汇（紧排标题 / ▍mono 遥测 / 墨色药丸）。
- * meta 行遥测语义：已加载数是「活数据」（绿），需关注数走失败色，其余中性。 */
+/*
+ * Quota header matches the credential vault and dashboard. Loaded counts use green, attention
+ * counts use the failure color, and other metadata stays neutral.
+ */
 
 .header {
   display: flex;
@@ -40,7 +42,7 @@
   letter-spacing: 0.02em;
   color: var(--text-secondary);
 
-  /* 终端游标：结构记号，与凭证库 meta 行同语汇 */
+  /* Cursor marker matches the credential header metadata row. */
   &::before {
     content: '▍';
     color: var(--viz-success);
@@ -72,7 +74,7 @@
   color: var(--viz-failure);
 }
 
-/* ---------- 动作区 ---------- */
+/* Actions. */
 
 .actions {
   display: flex;
@@ -81,7 +83,46 @@
   flex-shrink: 0;
 }
 
-/* 墨色药丸主按钮（深色主题自动反相） */
+/* Outlined pill toggle for email masking. */
+.secondaryAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+  border-radius: $radius-full;
+  background: none;
+  color: var(--text-secondary);
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    transform var(--dur-press, 160ms) var(--ease-out-strong, ease-out),
+    border-color var(--dur-hover, 200ms) var(--ease-out-strong, ease-out),
+    background-color var(--dur-hover, 200ms) var(--ease-out-strong, ease-out),
+    color var(--dur-hover, 200ms) var(--ease-out-strong, ease-out);
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .secondaryAction:hover {
+    border-color: var(--border-hover);
+    background: color-mix(in srgb, var(--bg-tertiary) 55%, transparent);
+    color: var(--text-primary);
+  }
+}
+
+/* Primary pill button reverses contrast in dark mode. */
 .primaryAction {
   display: inline-flex;
   align-items: center;
@@ -145,11 +186,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .primaryAction {
+  .primaryAction,
+  .secondaryAction {
     transition: none;
   }
 
-  .primaryAction:active:not(:disabled) {
+  .primaryAction:active:not(:disabled),
+  .secondaryAction:active {
     transform: none;
   }
 

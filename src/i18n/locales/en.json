@@ -97,7 +97,6 @@
   },
   "nav": {
     "dashboard": "Dashboard",
-    "quick_start": "Quick Start",
     "ai_providers": "AI Providers",
     "auth_files": "Auth Files",
     "oauth": "OAuth Login",
@@ -117,7 +116,6 @@
   },
   "nav_meta": {
     "dashboard": "Operations overview",
-    "quick_start": "APIKEY.FUN setup",
     "ai_providers": "Upstream model routing",
     "auth_files": "Auth files & credentials",
     "oauth": "OAuth authorization",
@@ -296,6 +294,7 @@
     "filter_antigravity": "Antigravity",
     "filter_xai": "xAI",
     "filter_iflow": "iFlow",
+    "filter_opencode-go": "OpenCode Go",
     "filter_vertex": "Vertex",
     "filter_empty": "Empty",
     "filter_unknown": "Other",
@@ -514,6 +513,19 @@
     "pay_as_you_go_enabled": "Enabled, cap {{cap}}",
     "pay_as_you_go_disabled": "Disabled"
   },
+  "opencode_go_quota": {
+    "title": "OpenCode Go Quota",
+    "empty_title": "No OpenCode Go credentials",
+    "empty_desc": "Configure an API key in the opencode-go-cliproxyapi plugin to track its usage here.",
+    "idle": "Click here to refresh quota",
+    "loading": "Loading quota...",
+    "load_failed": "Failed to load quota: {{message}}",
+    "missing_key_id": "Credential is not an OpenCode Go key record",
+    "empty_windows": "No quota data available",
+    "rolling_limit": "5-hour limit",
+    "weekly_limit": "Weekly limit",
+    "monthly_limit": "Monthly limit"
+  },
   "vertex_import": {
     "title": "Vertex JSON Login",
     "description": "Upload a Google service account JSON to store it as auth-dir/vertex-<project>.json using the same rules as the CLI vertex-import helper.",
@@ -699,7 +711,6 @@
     "antigravity_oauth_polling_error": "Failed to check authentication status:",
     "kimi_oauth_title": "Kimi OAuth",
     "kimi_oauth_button": "Log in with Kimi",
-    "kimi_sign_up_button": "Sign Up Now",
     "kimi_oauth_hint": "Quickly log in to Kimi through device authorization. Authentication files are obtained and saved automatically.",
     "kimi_oauth_url_label": "Authorization URL:",
     "kimi_open_link": "Open Link",
@@ -1013,7 +1024,6 @@
           "title": "Network Configuration",
           "description": "Proxy, retry, and routing settings",
           "proxy_url": "Proxy URL",
-          "proxy_url_sponsor_hint": "No suitable proxy?",
           "request_retry": "Request Retry Count",
           "max_retry_credentials": "Max Retry Credentials",
           "max_retry_credentials_hint": "Leave empty to keep it unset. Set to 0 to preserve legacy behavior and try all available credentials.",
@@ -1171,7 +1181,7 @@
   },
   "quota_management": {
     "title": "Quota Management",
-    "description": "Monitor OAuth quota status for Antigravity, Codex, Claude, Kimi, and xAI credentials.",
+    "description": "Monitor quota for Antigravity, Codex, Claude, Kimi, xAI, and OpenCode Go credentials.",
     "refresh_all_credentials": "Refresh all credentials",
     "sort_label": "Sort",
     "sort_default": "Default",
@@ -1180,7 +1190,29 @@
     "meta_loaded": "{{count}} loaded",
     "meta_attention": "{{count}} need attention",
     "empty_title": "No quota-capable credentials",
-    "empty_desc": "Connect an Antigravity, Claude, Codex, xAI, or Kimi credential to track its quota here.",
+    "empty_desc": "Connect an Antigravity, Claude, Codex, xAI, Kimi, or OpenCode Go credential to track its quota here.",
+    "view_label": "View",
+    "view_ledger": "Ledger",
+    "view_cards": "Cards",
+    "show_emails": "Show emails",
+    "hide_emails": "Hide emails",
+    "mask_hint": "Emails in credential names are masked for screen sharing",
+    "summary_of": "of {{total}}%",
+    "summary_credentials_one": "{{count}} credential",
+    "summary_credentials_other": "{{count}} credentials",
+    "summary_not_loaded": "not loaded",
+    "summary_partial": "{{loaded}} of {{count}} loaded",
+    "summary_filter": "Show only {{provider}}",
+    "no_reset_pending": "No reset pending",
+    "renews_at": "renews {{time}}",
+    "count_available": "{{count}} available",
+    "ledger_load": "Load quota",
+    "ledger_load_all": "Load quota for {{count}} credentials",
+    "ledger_load_hint": "Quota is fetched on demand and never polled. Load it once, then refresh rows individually.",
+    "ledger_col_credential": "Credential",
+    "ledger_col_limits": "Limits",
+    "ledger_col_details": "Details",
+    "ledger_col_actions": "Actions",
     "windows_title": "Quota windows",
     "windows_span_weekly": "two weeks",
     "windows_span_session": "three days",
@@ -1422,8 +1454,6 @@
   },
   "language": {
     "switch": "Language",
-    "chinese": "中文",
-    "chinese_tw": "Traditional Chinese (Taiwan)",
     "english": "English",
     "russian": "Русский"
   },
@@ -1469,7 +1499,6 @@
     },
     "categories": {
       "title": "Providers",
-      "quickFill": "Quick Fill",
       "activeCount": "{{active}}/{{total}} active"
     },
     "providerNames": {
@@ -1480,9 +1509,6 @@
       "claude": "Claude",
       "vertex": "Vertex",
       "openaiCompatibility": "OpenAI Compatible",
-      "apikeyFun": "APIKEY.FUN",
-      "fennoAI": "FennoAI",
-      "qiniuCloud": "Qiniu Cloud",
       "kimi": "Kimi"
     },
     "table": {
@@ -1504,27 +1530,12 @@
       "filterPlaceholder": "Search keys, URLs, prefixes…",
       "description": "Manage resources under {{route}}"
     },
-    "sponsor": {
-      "protocolSummary": "Anthropic / OpenAI / Gemini / Codex API (Responses)",
+    "grouped": {
       "detailHint": "{{provider}} is persisted into the matching API key configs by protocol; this view manages them together.",
-      "registerLink": "Register here",
-      "registerNow": "Register now",
-      "kimiPromo": "New users get API credit worth 10% of their first successful top-up, up to ¥1000. Offer ends September 30.",
-      "dashboardLink": "Dashboard",
-      "emptyRegisterHint": "No configuration yet.",
       "apiKeyHint": "This key is only written to the selected group/protocol config.",
-      "usageCheck": "Check usage",
-      "usageChecking": "Checking",
-      "usageRemaining": "Remaining: {{amount}} {{unit}}",
-      "usageBreakdown": "Used {{used}} / Limit {{limit}}",
-      "usageStatus": "Status: {{status}}",
-      "usageInvalid": "Invalid key",
-      "usageEmpty": "The endpoint returned no usage data.",
-      "usageApiKeyRequired": "API key is required",
       "aggregationConflict": "This grouped provider contains multiple backend configs or OpenAI keys. Edit it in the source configuration to avoid data loss.",
       "partialMutationWarning": "The operation failed after one or more protocols may have been updated. The latest configuration was reloaded; review it before retrying.",
       "groupedKeysTitle": "Grouped keys",
-      "groupedKeysHint": "Platform keys may be bound to a group when created. Each grouped key here manages one protocol, and model discovery only uses that protocol.",
       "groupedKey": "Grouped key #{{index}}",
       "addGroupedKey": "Add grouped key",
       "removeGroupedKey": "Remove grouped key",
@@ -1534,21 +1545,13 @@
       "urlMode": "{{provider}} URL",
       "urlHint": "All URLs use the same API conventions. Saving writes only the endpoint for the current grouped protocol.",
       "urlOptions": {
-        "standard": "Standard URL",
-        "direct": "Direct URL",
-        "domestic": "China mainland route",
-        "overseas": "Overseas route",
-        "mainlandChina": "Mainland China (recommended)",
-        "global": "Global"
+        "domestic": "moonshot.cn",
+        "overseas": "moonshot.ai"
       },
       "urlOptionDescriptions": {
-        "domestic": "For users and workloads in mainland China; usually lower latency in mainland networks.",
-        "overseas": "For overseas deployments, cross-border access, or workloads that need overseas models.",
-        "mainlandChinaRecommended": "Recommended for users and workloads on mainland China networks.",
-        "global": "For users and workloads in all other regions."
+        "domestic": "Kimi endpoint for mainland China accounts (platform.kimi.com).",
+        "overseas": "International Kimi endpoint (platform.kimi.ai)."
       },
-      "modelsTitle": "Protocol model settings",
-      "modelsHint": "Configure model allowlists or aliases separately for Codex API, Anthropic, Gemini, and OpenAI-compatible routes.",
       "protocolModels": {
         "codex": "Codex API models",
         "anthropic": "Anthropic models",
@@ -1565,10 +1568,8 @@
         "keyRequired": "Enter an API key for every grouped key.",
         "protocolDuplicate": "Each protocol can only have one grouped key."
       },
-      "openaiEntries": "OpenAI-compatible keys",
       "codexEntries": "Codex API keys",
       "anthropicEntries": "Anthropic keys",
-      "geminiEntries": "Gemini keys",
       "protocols": {
         "anthropic": "Anthropic",
         "openai": "OpenAI Compatible",

@@ -31,11 +31,8 @@ import {
   normalizePluginConfigFieldType,
   type PluginConfigDraft,
 } from './pluginConfigDraft';
-import {
-  getPluginTitle,
-  notifyPluginResourcesChanged,
-  resolvePluginAssetURL,
-} from './pluginResources';
+import { getPluginTitle, notifyPluginResourcesChanged } from './pluginResources';
+import { resolvePluginLogo } from './pluginLogos';
 import { waitForPluginState } from './pluginPolling';
 import styles from './PluginsPage.module.scss';
 
@@ -157,11 +154,6 @@ export function PluginsPage() {
       return haystack.includes(query);
     });
   }, [data?.plugins, filter]);
-
-  const resolvePluginAsset = useCallback(
-    (value: string) => resolvePluginAssetURL(value, apiBase),
-    [apiBase]
-  );
 
   const openConfigSheet = async (plugin: PluginListEntry) => {
     if (openingConfigID || mutatingID || deletingID) return;
@@ -567,7 +559,11 @@ export function PluginsPage() {
       ) : (
         <div className={styles.pluginList}>
           {visiblePlugins.map((plugin) => {
-            const logo = resolvePluginAsset(plugin.logo || plugin.metadata?.logo || '');
+            const logo = resolvePluginLogo(
+              plugin.id,
+              plugin.logo || plugin.metadata?.logo || '',
+              apiBase
+            );
             const github = plugin.metadata?.githubRepository.trim();
             const openingConfig = openingConfigID === plugin.id;
             const deletingPlugin = deletingID === plugin.id;

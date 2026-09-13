@@ -31,6 +31,11 @@ export function isXaiFile(file: AuthFileItem): boolean {
   return resolveAuthProvider(file) === 'xai';
 }
 
+/** Credentials materialized by the opencode-go-cliproxyapi plugin (`provider: "opencode-go"`). */
+export function isOpencodeGoFile(file: AuthFileItem): boolean {
+  return resolveAuthProvider(file) === 'opencode-go';
+}
+
 export function isDisabledAuthFile(file: AuthFileItem): boolean {
   const raw = (file as { disabled?: unknown }).disabled;
   if (typeof raw === 'boolean') return raw;

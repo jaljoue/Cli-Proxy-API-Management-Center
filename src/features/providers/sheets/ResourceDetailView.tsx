@@ -5,12 +5,12 @@ import { getProviderTotalStats, type ProviderRecentUsageMap } from '@/components
 import type { OpenAIProviderConfig } from '@/types';
 import { maskApiKey } from '@/utils/format';
 import {
-  getSponsorProviderDefinition,
-  isMultiProtocolSponsorBrand,
-  sponsorProtocolI18nKey,
-  sponsorProtocolUrl,
-} from '../sponsorDefinitions';
-import type { ProviderResource, SponsorProviderRaw } from '../types';
+  getGroupedProviderDefinition,
+  isGroupedProviderBrand,
+  groupedProtocolI18nKey,
+  groupedProtocolUrl,
+} from '../groupedProviders';
+import type { GroupedProviderRaw, ProviderResource } from '../types';
 import styles from './forms/sharedForm.module.scss';
 
 interface ResourceDetailViewProps {
@@ -18,7 +18,7 @@ interface ResourceDetailViewProps {
   usageByProvider?: ProviderRecentUsageMap;
 }
 
-const sponsorProtocolEntryKey = (protocol: string): string => {
+const groupedProtocolEntryKey = (protocol: string): string => {
   if (protocol === 'claude') return 'anthropicEntries';
   if (protocol === 'codex') return 'codexEntries';
   return `${protocol}Entries`;
@@ -27,9 +27,9 @@ const sponsorProtocolEntryKey = (protocol: string): string => {
 export function ResourceDetailView({ resource, usageByProvider }: ResourceDetailViewProps) {
   const { t } = useTranslation();
 
-  if (isMultiProtocolSponsorBrand(resource.brand)) {
-    const definition = getSponsorProviderDefinition(resource.brand);
-    const raw = resource.raw as SponsorProviderRaw;
+  if (isGroupedProviderBrand(resource.brand)) {
+    const definition = getGroupedProviderDefinition(resource.brand);
+    const raw = resource.raw as GroupedProviderRaw;
     const openaiKeyCount = raw.openai.reduce(
       (count, item) => count + (item.config.apiKeyEntries?.length ?? 0),
       0
@@ -62,18 +62,18 @@ export function ResourceDetailView({ resource, usageByProvider }: ResourceDetail
         <div className={styles.detailHeader}>
           <div className={styles.sectionTitle}>{resource.name ?? resource.identifier}</div>
           <p className={styles.sectionDesc}>
-            {t('providersPage.sponsor.detailHint', { provider: definition.displayName })}
+            {t('providersPage.grouped.detailHint', { provider: definition.displayName })}
           </p>
         </div>
 
-        <div className={styles.sponsorProtocolGrid}>
+        <div className={styles.groupedProtocolGrid}>
           {definition.protocols.map((protocol) => (
-            <div key={protocol} className={styles.sponsorProtocolCard}>
-              <span className={styles.sponsorProtocolName}>
-                {t(`providersPage.sponsor.protocols.${sponsorProtocolI18nKey(protocol)}`)}
+            <div key={protocol} className={styles.groupedProtocolCard}>
+              <span className={styles.groupedProtocolName}>
+                {t(`providersPage.grouped.protocols.${groupedProtocolI18nKey(protocol)}`)}
               </span>
-              <span className={styles.sponsorProtocolUrl}>
-                {sponsorProtocolUrl(protocolUrls, protocol)}
+              <span className={styles.groupedProtocolUrl}>
+                {groupedProtocolUrl(protocolUrls, protocol)}
               </span>
             </div>
           ))}
@@ -91,7 +91,7 @@ export function ResourceDetailView({ resource, usageByProvider }: ResourceDetail
           {definition.protocols.map((protocol) => (
             <div key={protocol}>
               <dt className={styles.dt}>
-                {t(`providersPage.sponsor.${sponsorProtocolEntryKey(protocol)}`)}
+                {t(`providersPage.grouped.${groupedProtocolEntryKey(protocol)}`)}
               </dt>
               <dd className={styles.dd}>{protocolCounts[protocol]}</dd>
             </div>

@@ -1,0 +1,574 @@
+@use '../../../styles/mixins' as *;
+
+/* ============================================================
+ * Quota ledger: rows grouped by provider; four columns = credential / limit levels / details /
+ * actions.
+ * Same telemetry vocabulary as the cards: mono + tabular-nums; color only on level bars and
+ * countdowns.
+ * ============================================================ */
+
+.ledger {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+}
+
+/* ---------- Top "load" banner (only while the page still has unloaded rows) ---------- */
+
+.loadBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border: 1px dashed var(--border-color);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg-primary) 60%, transparent);
+}
+
+.loadHint {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}
+
+.loadButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: 0;
+  border-radius: $radius-full;
+  padding: 8px 14px;
+  background: var(--text-primary);
+  color: var(--bg-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1;
+  transition:
+    transform var(--dur-press, 160ms) var(--ease-out-strong, ease-out),
+    background-color var(--dur-hover, 200ms) var(--ease-out-strong, ease-out);
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+}
+
+/* ---------- Groups ---------- */
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px 8px;
+}
+
+.groupName {
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--text-primary);
+}
+
+.groupCount {
+  font-family: $font-mono;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary);
+}
+
+.glyph {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--bg-tertiary) 60%, transparent);
+}
+
+.glyphImage {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  display: block;
+}
+
+.glyphFallback {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+/* ---------- Rows ---------- */
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg-primary) 82%, transparent);
+  overflow: hidden;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(200px, 1.1fr) minmax(0, 3fr) minmax(0, 1.1fr) auto;
+  gap: 12px 20px;
+  align-items: start;
+  padding: 14px 16px;
+  min-width: 0;
+
+  & + & {
+    border-top: 1px solid color-mix(in srgb, var(--border-color) 80%, transparent);
+  }
+
+  &[data-status='error'] {
+    background: color-mix(in srgb, var(--viz-failure) 4%, transparent);
+  }
+}
+
+/* Credential column */
+
+.identity {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  min-width: 0;
+}
+
+.identityText {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.name {
+  font-family: $font-mono;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text-primary);
+  @include text-ellipsis;
+}
+
+.subline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  min-width: 0;
+}
+
+.plan {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.sublinePart {
+  font-family: $font-mono;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+
+  &::before {
+    content: '·';
+    margin-right: 6px;
+    color: var(--text-quaternary);
+  }
+}
+
+/* Level column: one fixed-width block per limit, wrapping within the row */
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.meters {
+  display: grid;
+  gap: 10px 18px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr));
+  min-width: 0;
+}
+
+.meter {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.meterHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.meterLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  @include text-ellipsis;
+
+  .meter[data-primary] & {
+    color: var(--text-primary);
+  }
+}
+
+.meterValue {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: $font-mono;
+  font-size: 12.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+
+  &[data-tone='low'] {
+    color: var(--viz-failure);
+  }
+}
+
+.meterDetail {
+  font-weight: 500;
+  color: var(--text-tertiary);
+}
+
+.track {
+  height: 5px;
+  border-radius: $radius-full;
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: $radius-full;
+  background: var(--viz-success);
+  transition: width 360ms var(--ease-out-strong, ease);
+
+  &[data-tone='medium'] {
+    background: var(--quota-medium-color);
+  }
+
+  &[data-tone='low'] {
+    background: var(--viz-failure);
+  }
+
+  &[data-tone='none'] {
+    background: transparent;
+  }
+}
+
+.meterReset {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  font-family: $font-mono;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-quaternary);
+  min-height: 1.4em;
+}
+
+.resetRelative {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.resetSoon {
+  font-weight: 650;
+  color: var(--warning-text);
+}
+
+.resetAbsolute::before {
+  content: '·';
+  margin-right: 6px;
+}
+
+.resetMuted {
+  color: var(--text-tertiary);
+}
+
+.message {
+  font-family: $font-mono;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}
+
+/* Details column */
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.factLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.factValue {
+  font-family: $font-mono;
+  font-size: 12.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.factLine,
+.factLineSoon {
+  font-family: $font-mono;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary);
+  @include text-ellipsis;
+}
+
+.factLineSoon {
+  color: var(--warning-text);
+  font-weight: 600;
+}
+
+.factError {
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--warning-text);
+  overflow-wrap: anywhere;
+}
+
+/* Actions column */
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  min-width: 0;
+}
+
+.action,
+.idle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+  border-radius: $radius-full;
+  background: none;
+  padding: 5px 11px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  transition:
+    transform var(--dur-press, 160ms) var(--ease-out-strong, ease-out),
+    border-color var(--dur-hover, 200ms) var(--ease-out-strong, ease-out),
+    background-color var(--dur-hover, 200ms) var(--ease-out-strong, ease-out),
+    color var(--dur-hover, 200ms) var(--ease-out-strong, ease-out);
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+}
+
+.idle {
+  border-style: dashed;
+  align-self: flex-start;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .action:hover:not(:disabled),
+  .idle:hover:not(:disabled) {
+    border-color: var(--border-hover);
+    border-style: solid;
+    background: color-mix(in srgb, var(--bg-tertiary) 55%, transparent);
+    color: var(--text-primary);
+  }
+}
+
+/* loading / error */
+
+.skeleton {
+  display: grid;
+  gap: 10px 18px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr));
+}
+
+.skeletonMeter {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.skeletonLabel,
+.skeletonTrack {
+  display: block;
+  border-radius: $radius-full;
+  background-color: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  background-image: linear-gradient(
+    90deg,
+    transparent 20%,
+    color-mix(in srgb, var(--text-primary) 6%, transparent) 50%,
+    transparent 80%
+  );
+  background-repeat: no-repeat;
+  background-size: 220% 100%;
+  animation: quota-ledger-sweep 1.2s linear infinite;
+}
+
+@keyframes quota-ledger-sweep {
+  from {
+    background-position: -110% 0;
+  }
+  to {
+    background-position: 210% 0;
+  }
+}
+
+.skeletonLabel {
+  width: 45%;
+  height: 10px;
+}
+
+.skeletonTrack {
+  width: 100%;
+  height: 5px;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.error {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--viz-failure);
+  overflow-wrap: anywhere;
+}
+
+.spinning {
+  animation: quota-ledger-spin 0.8s linear infinite;
+}
+
+@keyframes quota-ledger-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 1100px) {
+  .row {
+    grid-template-columns: minmax(180px, 1fr) minmax(0, 2.4fr);
+  }
+
+  .facts {
+    grid-column: 2;
+  }
+
+  .actions {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
+
+@include mobile {
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 12px 12px;
+  }
+
+  .facts,
+  .actions {
+    grid-column: 1;
+  }
+
+  .loadBanner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .loadButton {
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadButton,
+  .action,
+  .idle,
+  .fill {
+    transition: none;
+  }
+
+  .skeletonLabel,
+  .skeletonTrack,
+  .spinning {
+    animation: none;
+  }
+}

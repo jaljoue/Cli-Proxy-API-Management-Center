@@ -1,9 +1,9 @@
 /**
- * 验证工具函数
+ * Validation helpers
  */
 
 /**
- * 验证 API Key 字符集（仅允许 ASCII 可见字符）
+ * Validate the API key charset (only printable ASCII allowed)
  */
 export function isValidApiKeyCharset(key: string): boolean {
   if (!key) return false;

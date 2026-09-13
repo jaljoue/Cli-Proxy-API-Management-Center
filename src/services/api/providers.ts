@@ -1,6 +1,4 @@
-/**
- * AI 提供商相关 API
- */
+/** AI provider API. */
 
 import { apiClient } from './client';
 import { isRecord } from '@/utils/helpers';

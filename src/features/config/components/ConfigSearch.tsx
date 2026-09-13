@@ -7,13 +7,16 @@ import styles from './ConfigSearch.module.scss';
 
 export type ConfigSearchProps = {
   disabled?: boolean;
-  /** 用户选中结果：由页面切换 tab 并滚动/脉冲目标字段（useFieldJump）。 */
+  /**
+   * Selecting a result switches tabs and scrolls to and highlights the field through
+   * useFieldJump.
+   */
   onJump: (entry: ConfigFieldSearchEntry) => void;
 };
 
 /**
- * 全局字段搜索 combobox（标签 / YAML 键名 / 关键词），键盘可导航。
- * 跳转后保留输入文本，只收起结果列表，便于继续调整查询。
+ * Keyboard-accessible field search by label, YAML key or keyword.
+ * Keep the query after navigation and close only the results so users can refine the search.
  */
 export function ConfigSearch({ disabled = false, onJump }: ConfigSearchProps) {
   const { t } = useTranslation();

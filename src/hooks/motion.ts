@@ -2,13 +2,13 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { animate } from 'motion/mini';
 
 /**
- * Premium 动效档位：入场 0.45s、减速曲线、无回弹。
- * 与 PageTransition 保持同一套自定义 easing 写法。
+ * Entrance animation: 0.45s with deceleration and no bounce.
+ * Use the same custom easing as PageTransition.
  */
 const REVEAL_DISTANCE = 24;
 const REVEAL_DURATION = 0.45;
 const COUNT_UP_DURATION = 900;
-/** 分组入场的级差与总预算：级差再大也不许整组拖过 360ms */
+/** Cap the total group stagger at 360ms regardless of item count. */
 const GROUP_STAGGER = 0.07;
 const GROUP_MAX_TOTAL = 0.36;
 
@@ -20,10 +20,9 @@ export const prefersReducedMotion = (): boolean =>
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /**
- * 元素滚动进入视口时上浮淡入。
- *
- * 初始态由 JS 在绘制前写入行内样式，因此脚本未执行时内容始终可见，
- * 不依赖任何 CSS 前置类。
+ * Fade and slide elements in when they enter the viewport.
+ * JavaScript sets initial inline styles before paint; content remains visible without scripts or
+ * prerequisite CSS classes.
  */
 export function useRevealOnScroll<T extends HTMLElement>(delaySeconds = 0) {
   const ref = useRef<T | null>(null);
@@ -80,11 +79,10 @@ export function useRevealOnScroll<T extends HTMLElement>(delaySeconds = 0) {
 }
 
 /**
- * 容器进入视口时，其内 `[data-reveal]` 子元素按 DOM 顺序级联上浮淡入。
- *
- * 级差 70ms、整组封顶 360ms（子项多时自动压缩级差），符合 micro-cascade 预算；
- * `data-reveal="scale"` 的子项额外从 0.97 缩放入场（用于玻璃面板的 materialize）。
- * 初始态同样在绘制前写入行内样式，脚本缺席时内容始终可见。
+ * Stagger data-reveal descendants in DOM order when the container enters the viewport.
+ * Use 70ms steps capped at 360ms total, compressing steps for larger groups.
+ * Elements with data-reveal="scale" also scale from 0.97.
+ * Set initial inline styles before paint so content remains visible without scripts.
  */
 export function useRevealGroup<T extends HTMLElement>(baseDelaySeconds = 0) {
   const ref = useRef<T | null>(null);
@@ -165,9 +163,7 @@ export function useRevealGroup<T extends HTMLElement>(baseDelaySeconds = 0) {
   return ref;
 }
 
-/**
- * 数字滚动到目标值。减少动效偏好下直接落到终值。
- */
+/** Animate a number to its target; use the final value immediately with reduced motion. */
 export function useCountUp(target: number, enabled = true): number {
   const [displayValue, setDisplayValue] = useState(target);
   const fromRef = useRef(target);

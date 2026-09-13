@@ -29,10 +29,10 @@ export type BatchActionBarProps = {
 };
 
 /**
- * 悬浮批量操作条：portal 到 body 的玻璃工具栏。
- * - 选中数 >0 时上浮入场（0.28s 强减速），清零后加速退场（0.22s）再卸载；
- * - reduced-motion 下只做透明度淡入淡出（保留 translateX(-50%) 基础变换，防止错位半宽）；
- * - 实时高度写入 --auth-files-action-bar-height 供页面底部留白。
+ * Floating batch toolbar, portaled to body.
+ * Enter over 0.28s when selection becomes nonempty; exit over 0.22s before unmounting.
+ * Reduced motion uses opacity only, retaining translateX(-50%) for centering.
+ * Publish the measured height through --auth-files-action-bar-height for bottom spacing.
  */
 export function BatchActionBar(props: BatchActionBarProps) {
   const {

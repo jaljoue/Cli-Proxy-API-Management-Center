@@ -27,8 +27,8 @@ import {
   isDefaultPluginStoreSource,
   isOfficialPlugin,
   notifyPluginResourcesChanged,
-  resolvePluginAssetURL,
 } from './pluginResources';
+import { resolvePluginLogo } from './pluginLogos';
 import { PluginInstallGateModal } from './components/PluginInstallGateModal';
 import {
   buildGitHubReleasesPageURL,
@@ -788,7 +788,7 @@ export function PluginStorePage() {
 
   const renderCard = (entry: PluginStoreEntry) => {
     const entryKey = getStoreEntryKey(entry);
-    const logo = resolvePluginAssetURL(entry.logo, apiBase);
+    const logo = resolvePluginLogo(entry.id, entry.logo, apiBase);
     const repositoryURL = buildRepositoryURL(entry.repository);
     const homepageURL = /^https?:\/\//i.test(entry.homepage) ? entry.homepage : '';
     const isUpdate = entry.installed && entry.updateAvailable;

@@ -1,14 +1,14 @@
 import { expect, test } from 'bun:test';
 import { createInstance } from 'i18next';
 import ru from '../src/i18n/locales/ru.json';
-import zhCN from '../src/i18n/locales/zh-CN.json';
+import en from '../src/i18n/locales/en.json';
 
 test('Russian quota reset messages resolve locally and interpolate the account and failure', async () => {
   const i18n = createInstance();
   await i18n.init({
     lng: 'ru',
-    fallbackLng: 'zh-CN',
-    resources: { ru: { translation: ru }, 'zh-CN': { translation: zhCN } },
+    fallbackLng: 'en',
+    resources: { ru: { translation: ru }, en: { translation: en } },
     interpolation: { escapeValue: false },
   });
   const messages = {
@@ -31,8 +31,8 @@ test('Russian auth-file headers have local labels, JSON help and validation erro
   const i18n = createInstance();
   await i18n.init({
     lng: 'ru',
-    fallbackLng: 'zh-CN',
-    resources: { ru: { translation: ru }, 'zh-CN': { translation: zhCN } },
+    fallbackLng: 'en',
+    resources: { ru: { translation: ru }, en: { translation: en } },
     interpolation: { escapeValue: false },
   });
   const messages = {

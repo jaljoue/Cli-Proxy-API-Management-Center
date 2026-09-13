@@ -45,7 +45,8 @@ interface ErrorLogItem {
   modified?: number;
 }
 
-// 初始只渲染最近 100 行，滚动到顶部再逐步加载更多（避免一次性渲染过多导致卡顿）
+// Initially render only the latest 100 lines; load more as the user scrolls to the top
+// (avoids jank from rendering too much at once)
 const INITIAL_DISPLAY_LINES = 100;
 const MAX_BUFFER_LINES = 10000;
 const LONG_PRESS_MS = 650;
@@ -186,7 +187,8 @@ export function LogsPage() {
   const logRequestInFlightRef = useRef(false);
   const pendingFullReloadRef = useRef(false);
 
-  // 保存最新游标用于增量获取；新接口优先使用 cursor，旧接口继续使用 after。
+  // Keep the latest position for incremental fetches; the new API prefers cursor, the old one
+  // keeps using after.
   const logPositionRef = useRef<LogPosition>({});
 
   const resetLogPosition = () => {
@@ -265,7 +267,7 @@ export function LogsPage() {
         const visibleFrom = Math.max(buffer.length - INITIAL_DISPLAY_LINES, 0);
         setLogState({ buffer, visibleFrom });
       } else if (incremental && newLines.length > 0) {
-        // 增量更新：追加新日志并限制缓冲区大小（避免内存与渲染膨胀）
+        // Incremental update: append new logs and cap the buffer size (avoids memory/render bloat)
         setLogState((prev) => {
           const prevRenderedCount = prev.buffer.length - prev.visibleFrom;
           const combined = mergeIncrementalLines(prev.buffer, newLines);
@@ -273,7 +275,8 @@ export function LogsPage() {
           const buffer = dropCount > 0 ? combined.slice(dropCount) : combined;
           let visibleFrom = Math.max(prev.visibleFrom - dropCount, 0);
 
-          // 若用户停留在底部（跟随最新日志），则保持“渲染窗口”大小不变，避免无限增长
+          // If the user is pinned to the bottom (following the latest logs), keep the render window
+          // size constant to avoid unbounded growth
           if (stickToBottom) {
             visibleFrom = Math.max(buffer.length - prevRenderedCount, 0);
           }
@@ -281,7 +284,7 @@ export function LogsPage() {
           return { buffer, visibleFrom };
         });
       } else if (!incremental) {
-        // 全量加载：默认只渲染最后 100 行，向上滚动再展开更多
+        // Full load: render only the last 100 lines by default; scrolling up reveals more
         const buffer = newLines.slice(-MAX_BUFFER_LINES);
         const visibleFrom = Math.max(buffer.length - INITIAL_DISPLAY_LINES, 0);
         setLogState({ buffer, visibleFrom });
@@ -361,7 +364,7 @@ export function LogsPage() {
     setErrorLogsError('');
     try {
       const res = await logsApi.fetchErrorLogs();
-      // API 返回 { files: [...] }
+      // The API returns { files: [...] }
       setErrorLogs(Array.isArray(res.files) ? res.files : []);
     } catch (err: unknown) {
       console.error('Failed to load error logs:', err);

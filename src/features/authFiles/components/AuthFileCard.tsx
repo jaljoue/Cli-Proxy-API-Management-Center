@@ -49,7 +49,7 @@ export type AuthFileCardProps = {
   manualRefreshing: Record<string, boolean>;
   quotaFilterType: QuotaProviderType | null;
   statusBarCache: Map<string, AuthFileStatusBarData>;
-  /** 首屏一次性级联入场的延迟；null/undefined 表示不做入场动画。 */
+  /** Delay for the one-time first-paint cascade; null/undefined means no entrance animation. */
   entranceDelayMs?: number | null;
   onShowModels: (file: AuthFileItem) => void;
   onDownload: (name: string) => void;
@@ -98,7 +98,7 @@ export function AuthFileCard(props: AuthFileCardProps) {
   const typeColor = getTypeColor(providerKey, resolvedTheme);
   const typeLabel = getTypeLabel(t, providerKey);
   const providerIcon = getAuthFileIcon(providerKey, resolvedTheme);
-  // 与 AI 提供商界面一致：Kimi 图标底座随主题切换颜色
+  // Match the AI providers UI: the Kimi icon base changes color with the theme
   const useThemeSurfaceIcon = isThemeSurfaceIconProvider(providerKey);
 
   const quotaType =
@@ -118,7 +118,7 @@ export function AuthFileCard(props: AuthFileCardProps) {
   const priorityValue = Number.isSafeInteger(file.priority) ? file.priority : undefined;
   const weightValue = Number.isSafeInteger(file.weight) ? file.weight : undefined;
   const noteValue = typeof file.note === 'string' ? file.note.trim() : '';
-  // 主行显示账号（email/项目 ID），文件名降为满卡宽的 mono 副行
+  // Main row shows the account (email/project ID); file name drops to a full-width mono subline
   const identity = deriveAuthFileIdentity(file);
 
   const stateLabel = isRuntimeOnly
@@ -138,7 +138,8 @@ export function AuthFileCard(props: AuthFileCardProps) {
         ? styles.stateWarning
         : styles.stateActive;
 
-  // 挂载时捕获一次入场延迟：父级随后传 null 也不会中断已开始的动画
+  // Capture the entrance delay once on mount: a later null from the parent will not cut
+  // the animation
   const [mountEntranceDelayMs] = useState<number | null>(entranceDelayMs ?? null);
   const cardClasses = [
     styles.card,

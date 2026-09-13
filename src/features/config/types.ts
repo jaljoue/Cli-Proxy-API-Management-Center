@@ -1,11 +1,12 @@
 import type { VisualConfigValidationErrors, VisualConfigValues } from '@/types/visualConfig';
 
-/** 分区组件的统一签名：受控于 useVisualConfig 的表单值 + 补丁式 onChange。 */
+/** Uniform signature for section components: form values controlled by useVisualConfig +
+ * patch-style onChange. */
 export type ConfigSectionProps = {
   values: VisualConfigValues;
   validationErrors?: VisualConfigValidationErrors;
   disabled: boolean;
-  /** 仅首载入场为 true（页面挂载时捕获），tab 切换不重播。 */
+  /** true only for the first-load entrance (captured on page mount); tab switches do not replay. */
   animateIn?: boolean;
   onChange: (patch: Partial<VisualConfigValues>) => void;
 };

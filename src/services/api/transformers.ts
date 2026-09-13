@@ -285,7 +285,7 @@ const normalizeOauthExcluded = (payload: unknown): Record<string, string[]> | un
 };
 
 /**
- * 规范化 /config 返回值
+ * Normalize the /config response
  */
 export const normalizeConfigResponse = (raw: unknown): Config => {
   const config: Config = { raw: isRecord(raw) ? raw : {} };

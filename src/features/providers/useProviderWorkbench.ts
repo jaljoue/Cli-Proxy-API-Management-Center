@@ -15,14 +15,11 @@ import type {
   ProviderKeyConfig,
 } from '@/types';
 import {
-  apiKeyFunToResource,
   claudeToResource,
   codexToResource,
-  fennoAIToResource,
   geminiToResource,
   interactionsToResource,
   openaiToResource,
-  qiniuCloudToResource,
   kimiToResource,
   vertexToResource,
   xaiToResource,
@@ -35,32 +32,18 @@ import type {
   ProviderGroup,
   ProviderResource,
   ProviderSnapshot,
-  SponsorKeyEntryInput,
-  SponsorProviderBrand,
-  SponsorProviderRaw,
+  GroupedKeyEntryInput,
+  GroupedProviderBrand,
+  GroupedProviderRaw,
 } from './types';
-import {
-  buildApiKeyFunRaw,
-  isApiKeyFunClaudeProvider,
-  isApiKeyFunCodexProvider,
-  isApiKeyFunOpenAIProvider,
-} from './sponsor';
-import { buildFennoAIRaw, isFennoAIClaudeProvider, isFennoAICodexProvider } from './fennoAI';
-import {
-  buildQiniuCloudRaw,
-  isQiniuCloudClaudeProvider,
-  isQiniuCloudCodexProvider,
-  isQiniuCloudGeminiProvider,
-  isQiniuCloudOpenAIProvider,
-} from './qiniuCloud';
 import {
   buildKimiRaw,
   isKimiClaudeProvider,
   isKimiCodexProvider,
   isKimiOpenAIProvider,
 } from './kimi';
-import { getSponsorProviderDefinition, type SponsorProtocolUrls } from './sponsorDefinitions';
-import { runSponsorMutationWithRecovery } from './sponsorMutationRecovery';
+import { getGroupedProviderDefinition, type GroupedProtocolUrls } from './groupedProviders';
+import { runGroupedMutationWithRecovery } from './groupedMutationRecovery';
 
 export interface UseProviderWorkbenchResult {
   connected: boolean;
@@ -80,7 +63,7 @@ export interface UseProviderWorkbenchResult {
 }
 
 /* -------------------------------------------------------------------------- */
-/* form -> backend config 转换                                                 */
+/* form -> backend config conversion                                          */
 /* -------------------------------------------------------------------------- */
 
 const parseTextList = (text: string): string[] =>
@@ -112,10 +95,10 @@ const parseThinkingJson = (value: string | undefined): Record<string, unknown> |
 };
 
 /**
- * `'*'` 是「该 provider 已停用」的编码，其唯一所有者是 `form.disabled`：
- * 载入时 `stripDisableAllModelsRule` 把它剥进该 flag，保存时仅凭该 flag 重新追加。
- * 因此这里必须过滤掉用户在文本里手打的 `'*'`——排除模型的编辑面永远不该能开关停用。
- * 导出仅为让 tests/providerExcludedModelsDisableRule.test.ts 钉住这个不变量。
+ * `'*'` encodes "this provider is disabled", and its sole owner is `form.disabled`:
+ * on load `stripDisableAllModelsRule` strips it into that flag; on save it is re-appended from that flag alone.
+ * So a hand-typed `'*'` in the text must be filtered out here - the excluded-models editor must never toggle disabling.
+ * Exported only so tests/providerExcludedModelsDisableRule.test.ts can pin this invariant.
  */
 export const buildExcludedModels = (
   textValue: string,
@@ -229,18 +212,18 @@ const buildOpenAIConfig = (
   };
 };
 
-const sponsorEntryApiKey = (entry: SponsorKeyEntryInput): string =>
+const groupedEntryApiKey = (entry: GroupedKeyEntryInput): string =>
   entry.apiKey.trim() || entry.existingApiKey?.trim() || '';
 
-const buildSponsorOpenAIConfig = (
-  entry: SponsorKeyEntryInput,
+const buildGroupedOpenAIConfig = (
+  entry: GroupedKeyEntryInput,
   providerName: string,
-  getProtocolUrls: (value: string | undefined | null) => SponsorProtocolUrls,
+  getProtocolUrls: (value: string | undefined | null) => GroupedProtocolUrls,
   existing?: OpenAIProviderConfig
 ): OpenAIProviderConfig => {
   const urls = getProtocolUrls(entry.baseUrl);
   const models = buildModelAliases(entry.models, true);
-  const apiKey = sponsorEntryApiKey(entry);
+  const apiKey = groupedEntryApiKey(entry);
   const firstExistingEntry = existing?.apiKeyEntries?.[0];
   const apiKeyEntries = apiKey
     ? [
@@ -266,15 +249,15 @@ const buildSponsorOpenAIConfig = (
   };
 };
 
-const buildSponsorProviderKeyConfig = (
-  entry: SponsorKeyEntryInput,
+const buildGroupedProviderKeyConfig = (
+  entry: GroupedKeyEntryInput,
   protocol: 'claude' | 'codex',
-  getProtocolUrls: (value: string | undefined | null) => SponsorProtocolUrls,
+  getProtocolUrls: (value: string | undefined | null) => GroupedProtocolUrls,
   existing?: ProviderKeyConfig
 ): ProviderKeyConfig => {
   const urls = getProtocolUrls(entry.baseUrl);
   const models = buildModelAliases(entry.models);
-  const apiKey = sponsorEntryApiKey(entry);
+  const apiKey = groupedEntryApiKey(entry);
   const excluded = entry.disabled
     ? withDisableAllModelsRule(stripDisableAllModelsRule(existing?.excludedModels))
     : withoutDisableAllModelsRule(existing?.excludedModels);
@@ -293,14 +276,14 @@ const buildSponsorProviderKeyConfig = (
   };
 };
 
-const buildSponsorGeminiConfig = (
-  entry: SponsorKeyEntryInput,
-  getProtocolUrls: (value: string | undefined | null) => SponsorProtocolUrls,
+const buildGroupedGeminiConfig = (
+  entry: GroupedKeyEntryInput,
+  getProtocolUrls: (value: string | undefined | null) => GroupedProtocolUrls,
   existing?: GeminiKeyConfig
 ): GeminiKeyConfig => {
   const urls = getProtocolUrls(entry.baseUrl);
   const models = buildModelAliases(entry.models);
-  const apiKey = sponsorEntryApiKey(entry);
+  const apiKey = groupedEntryApiKey(entry);
   const excluded = entry.disabled
     ? withDisableAllModelsRule(stripDisableAllModelsRule(existing?.excludedModels))
     : withoutDisableAllModelsRule(existing?.excludedModels);
@@ -319,11 +302,11 @@ const buildSponsorGeminiConfig = (
   };
 };
 
-const normalizeSponsorKeyEntries = (
-  entries: SponsorKeyEntryInput[] | undefined
-): SponsorKeyEntryInput[] => (entries ?? []).filter((entry) => sponsorEntryApiKey(entry));
+const normalizeGroupedKeyEntries = (
+  entries: GroupedKeyEntryInput[] | undefined
+): GroupedKeyEntryInput[] => (entries ?? []).filter((entry) => groupedEntryApiKey(entry));
 
-const toggleSponsorConfig = async (raw: SponsorProviderRaw, disabled: boolean) => {
+const toggleGroupedConfig = async (raw: GroupedProviderRaw, disabled: boolean) => {
   for (const item of raw.gemini) {
     const excludedModels = disabled
       ? withDisableAllModelsRule(item.config.excludedModels)
@@ -361,12 +344,9 @@ export const buildProviderGroups = (config: Config): ProviderGroup[] =>
     let resources: ProviderResource[];
     switch (brand) {
       case 'gemini':
-        resources = (config.geminiApiKeys ?? []).reduce<ProviderResource[]>((out, item, index) => {
-          if (!isQiniuCloudGeminiProvider(item)) {
-            out.push(geminiToResource(item, index));
-          }
-          return out;
-        }, []);
+        resources = (config.geminiApiKeys ?? []).map((item, index) =>
+          geminiToResource(item, index)
+        );
         break;
       case 'interactions':
         resources = (config.interactionsApiKeys ?? []).map((item, index) =>
@@ -375,12 +355,7 @@ export const buildProviderGroups = (config: Config): ProviderGroup[] =>
         break;
       case 'codex':
         resources = (config.codexApiKeys ?? []).reduce<ProviderResource[]>((out, item, index) => {
-          if (
-            !isApiKeyFunCodexProvider(item) &&
-            !isFennoAICodexProvider(item) &&
-            !isQiniuCloudCodexProvider(item) &&
-            !isKimiCodexProvider(item)
-          ) {
+          if (!isKimiCodexProvider(item)) {
             out.push(codexToResource(item, index));
           }
           return out;
@@ -391,12 +366,7 @@ export const buildProviderGroups = (config: Config): ProviderGroup[] =>
         break;
       case 'claude':
         resources = (config.claudeApiKeys ?? []).reduce<ProviderResource[]>((out, item, index) => {
-          if (
-            !isApiKeyFunClaudeProvider(item) &&
-            !isFennoAIClaudeProvider(item) &&
-            !isQiniuCloudClaudeProvider(item) &&
-            !isKimiClaudeProvider(item)
-          ) {
+          if (!isKimiClaudeProvider(item)) {
             out.push(claudeToResource(item, index));
           }
           return out;
@@ -410,11 +380,7 @@ export const buildProviderGroups = (config: Config): ProviderGroup[] =>
       case 'openaiCompatibility':
         resources = (config.openaiCompatibility ?? []).reduce<ProviderResource[]>(
           (out, item, index) => {
-            if (
-              !isApiKeyFunOpenAIProvider(item) &&
-              !isQiniuCloudOpenAIProvider(item) &&
-              !isKimiOpenAIProvider(item)
-            ) {
+            if (!isKimiOpenAIProvider(item)) {
               out.push(openaiToResource(item, index));
             }
             return out;
@@ -422,24 +388,9 @@ export const buildProviderGroups = (config: Config): ProviderGroup[] =>
           []
         );
         break;
-      case 'apikeyFun': {
-        const sponsorResource = apiKeyFunToResource(buildApiKeyFunRaw(config));
-        resources = sponsorResource ? [sponsorResource] : [];
-        break;
-      }
-      case 'fennoAI': {
-        const sponsorResource = fennoAIToResource(buildFennoAIRaw(config));
-        resources = sponsorResource ? [sponsorResource] : [];
-        break;
-      }
-      case 'qiniuCloud': {
-        const sponsorResource = qiniuCloudToResource(buildQiniuCloudRaw(config));
-        resources = sponsorResource ? [sponsorResource] : [];
-        break;
-      }
       case 'kimi': {
-        const sponsorResource = kimiToResource(buildKimiRaw(config));
-        resources = sponsorResource ? [sponsorResource] : [];
+        const groupedResource = kimiToResource(buildKimiRaw(config));
+        resources = groupedResource ? [groupedResource] : [];
         break;
       }
       default:
@@ -511,7 +462,7 @@ export function useProviderWorkbench(): UseProviderWorkbenchResult {
     refetch().catch(() => {});
   }, [connected, refetch]);
 
-  /* ------------------- snapshot 计算 ------------------- */
+  /* ------------------- snapshot computation ------------------- */
 
   const snapshot = useMemo<ProviderSnapshot | null>(() => {
     if (!config) return null;
@@ -523,18 +474,11 @@ export function useProviderWorkbench(): UseProviderWorkbenchResult {
 
   /* ------------------- mutations ------------------- */
 
-  const persistSponsorConfig = useCallback(
-    async (brand: SponsorProviderBrand, input: ProviderEntryFormInput) => {
-      const definition = getSponsorProviderDefinition(brand);
-      const raw =
-        brand === 'apikeyFun'
-          ? buildApiKeyFunRaw(config)
-          : brand === 'fennoAI'
-            ? buildFennoAIRaw(config)
-            : brand === 'qiniuCloud'
-              ? buildQiniuCloudRaw(config)
-              : buildKimiRaw(config);
-      const entries = normalizeSponsorKeyEntries(input.sponsorKeyEntries);
+  const persistGroupedConfig = useCallback(
+    async (brand: GroupedProviderBrand, input: ProviderEntryFormInput) => {
+      const definition = getGroupedProviderDefinition(brand);
+      const raw = buildKimiRaw(config);
+      const entries = normalizeGroupedKeyEntries(input.groupedKeyEntries);
       const openaiEntry = entries.find((entry) => entry.protocol === 'openai');
       const claudeEntry = entries.find((entry) => entry.protocol === 'claude');
       const codexEntry = entries.find((entry) => entry.protocol === 'codex');
@@ -543,7 +487,7 @@ export function useProviderWorkbench(): UseProviderWorkbenchResult {
       if (definition.protocols.includes('gemini')) {
         const current = raw.gemini[0];
         if (geminiEntry) {
-          const next = buildSponsorGeminiConfig(
+          const next = buildGroupedGeminiConfig(
             geminiEntry,
             definition.getProtocolUrls,
             current?.config
@@ -562,7 +506,7 @@ export function useProviderWorkbench(): UseProviderWorkbenchResult {
 
       const currentCodex = raw.codex[0];
       if (codexEntry) {
-        const next = buildSponsorProviderKeyConfig(
+        const next = buildGroupedProviderKeyConfig(
           codexEntry,
           'codex',
           definition.getProtocolUrls,
@@ -585,7 +529,7 @@ export function useProviderWorkbench(): UseProviderWorkbenchResult {
 
       const currentClaude = raw.claude[0];
       if (claudeEntry) {
-        const next = buildSponsorProviderKeyConfig(
+        const next = buildGroupedProviderKeyConfig(
           claudeEntry,
           'claude',
           definition.getProtocolUrls,
@@ -608,7 +552,7 @@ export function useProviderWorkbench(): UseProviderWorkbenchResult {
 
       const currentOpenAI = raw.openai[0];
       if (openaiEntry) {
-        const next = buildSponsorOpenAIConfig(
+        const next = buildGroupedOpenAIConfig(
           openaiEntry,
           definition.providerName,
           definition.getProtocolUrls,
@@ -660,20 +604,15 @@ export function useProviderWorkbench(): UseProviderWorkbenchResult {
           );
         } else if (brand === 'openaiCompatibility') {
           await providersApi.createOpenAIProvider(buildOpenAIConfig(input));
-        } else if (
-          brand === 'apikeyFun' ||
-          brand === 'fennoAI' ||
-          brand === 'qiniuCloud' ||
-          brand === 'kimi'
-        ) {
-          await runSponsorMutationWithRecovery(() => persistSponsorConfig(brand, input), refetch);
+        } else if (brand === 'kimi') {
+          await runGroupedMutationWithRecovery(() => persistGroupedConfig(brand, input), refetch);
         }
         await refetch();
       } finally {
         setMutating(false);
       }
     },
-    [persistSponsorConfig, refetch]
+    [persistGroupedConfig, refetch]
   );
 
   const updateProvider = useCallback(
@@ -730,20 +669,15 @@ export function useProviderWorkbench(): UseProviderWorkbenchResult {
             selector.index,
             buildOpenAIConfig(input, resource.raw as OpenAIProviderConfig)
           );
-        } else if (
-          brand === 'apikeyFun' ||
-          brand === 'fennoAI' ||
-          brand === 'qiniuCloud' ||
-          brand === 'kimi'
-        ) {
-          await runSponsorMutationWithRecovery(() => persistSponsorConfig(brand, input), refetch);
+        } else if (brand === 'kimi') {
+          await runGroupedMutationWithRecovery(() => persistGroupedConfig(brand, input), refetch);
         }
         await refetch();
       } finally {
         setMutating(false);
       }
     },
-    [persistSponsorConfig, refetch]
+    [persistGroupedConfig, refetch]
   );
 
   const deleteProvider = useCallback(
@@ -781,14 +715,9 @@ export function useProviderWorkbench(): UseProviderWorkbenchResult {
             (item, index) => (item.sourceIndex ?? index) !== sel.index
           );
           updateConfigValue('openai-compatibility', next);
-        } else if (
-          sel.brand === 'apikeyFun' ||
-          sel.brand === 'fennoAI' ||
-          sel.brand === 'qiniuCloud' ||
-          sel.brand === 'kimi'
-        ) {
-          await runSponsorMutationWithRecovery(async () => {
-            const raw = resource.raw as SponsorProviderRaw;
+        } else if (sel.brand === 'kimi') {
+          await runGroupedMutationWithRecovery(async () => {
+            const raw = resource.raw as GroupedProviderRaw;
             for (const item of raw.gemini) {
               await providersApi.deleteGeminiKey(item.config.apiKey, item.config.baseUrl);
             }
@@ -860,14 +789,9 @@ export function useProviderWorkbench(): UseProviderWorkbenchResult {
           }
         } else if (brand === 'openaiCompatibility' && selector.brand === 'openaiCompatibility') {
           await providersApi.updateOpenAIProviderDisabled(selector.index, disabled);
-        } else if (
-          brand === 'apikeyFun' ||
-          brand === 'fennoAI' ||
-          brand === 'qiniuCloud' ||
-          brand === 'kimi'
-        ) {
-          await runSponsorMutationWithRecovery(
-            () => toggleSponsorConfig(resource.raw as SponsorProviderRaw, disabled),
+        } else if (brand === 'kimi') {
+          await runGroupedMutationWithRecovery(
+            () => toggleGroupedConfig(resource.raw as GroupedProviderRaw, disabled),
             refetch
           );
         }

@@ -9,128 +9,6 @@
   max-width: 100%;
 }
 
-.quickStartForm {
-  gap: 20px;
-
-  .section {
-    gap: 14px;
-  }
-
-  .sectionTitle {
-    font-size: 17px;
-    font-weight: 700;
-    line-height: 1.35;
-    letter-spacing: 0;
-  }
-
-  .sectionDesc {
-    max-width: 72ch;
-    font-size: 14px;
-    line-height: 1.6;
-    color: var(--text-secondary);
-  }
-
-  .field {
-    gap: 7px;
-  }
-
-  .label {
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1.45;
-  }
-
-  .labelHint {
-    font-size: 12px;
-    line-height: 1.6;
-    color: var(--muted-foreground);
-  }
-
-  .input,
-  .textarea,
-  .discoverySearch {
-    font-size: 14px;
-    line-height: 1.45;
-  }
-
-  .entryCard {
-    gap: 12px;
-  }
-
-  .entryCardHeader {
-    font-size: 13px;
-    line-height: 1.45;
-  }
-
-  .sponsorGroupTitle {
-    gap: 3px;
-
-    strong {
-      font-size: 14px;
-      font-weight: 650;
-      line-height: 1.4;
-    }
-  }
-
-  .sponsorUrlOptionText,
-  .checkboxText {
-    font-size: 14px;
-    line-height: 1.45;
-  }
-
-  .sponsorUrlOptionText small,
-  .checkboxText small,
-  .sponsorProtocolUrl,
-  .sponsorUsageResult,
-  .connectivityError,
-  .discoveryEmpty,
-  .discoveryItem,
-  .discoveryBatchLabel,
-  .discoveryName {
-    font-size: 12px;
-    line-height: 1.6;
-  }
-
-  .sponsorProtocolName {
-    font-size: 13px;
-    font-weight: 650;
-    line-height: 1.4;
-  }
-
-  .sponsorUsageMain {
-    line-height: 1.45;
-  }
-
-  .sponsorUsageMeta,
-  .discoveryAlias,
-  .discoveryCount,
-  .discoveryAddedTag {
-    font-size: 12px;
-    line-height: 1.55;
-  }
-
-  .connectivityBtn,
-  .discoveryApplyBtn,
-  .addBtn,
-  .removeBtn {
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1;
-  }
-
-  .footerBtn {
-    font-size: 14px;
-    font-weight: 600;
-    line-height: 1;
-  }
-
-  details summary {
-    font-size: 14px;
-    font-weight: 650;
-    line-height: 1.45;
-  }
-}
-
 .section {
   display: flex;
   flex-direction: column;
@@ -360,7 +238,7 @@
   }
 }
 
-.sponsorGroupTitle {
+.groupedGroupTitle {
   display: flex;
   min-width: 0;
   flex-direction: column;
@@ -375,7 +253,7 @@
   }
 }
 
-.sponsorGroupSummary {
+.groupedGroupSummary {
   display: flex;
   min-width: 0;
   flex: 1;
@@ -384,8 +262,8 @@
   gap: 8px;
 }
 
-.sponsorSummaryKey,
-.sponsorSummaryUrl {
+.groupedSummaryKey,
+.groupedSummaryUrl {
   display: inline-block;
   min-width: 0;
   overflow: hidden;
@@ -393,13 +271,13 @@
   white-space: nowrap;
 }
 
-.sponsorSummaryKey {
+.groupedSummaryKey {
   max-width: 140px;
   font-family: $font-mono;
   color: var(--text-primary);
 }
 
-.sponsorSummaryUrl {
+.groupedSummaryUrl {
   max-width: min(360px, 45vw);
   font-family: $font-mono;
   color: var(--muted-foreground);
@@ -466,7 +344,7 @@
   justify-content: space-between;
 }
 
-.sponsorUrlOptions {
+.groupedUrlOptions {
   display: grid;
   grid-template-columns: 1fr;
   gap: 8px;
@@ -476,7 +354,7 @@
   }
 }
 
-.sponsorUrlOption {
+.groupedUrlOption {
   display: flex;
   align-items: flex-start;
   gap: 10px;
@@ -505,12 +383,12 @@
   }
 }
 
-.sponsorUrlOptionActive {
+.groupedUrlOptionActive {
   border-color: var(--primary-color);
   background: var(--primary-10);
 }
 
-.sponsorUrlOptionText {
+.groupedUrlOptionText {
   display: flex;
   min-width: 0;
   flex-direction: column;
@@ -527,13 +405,13 @@
   }
 }
 
-.sponsorUrlOptionText .sponsorUrlOptionDescription {
+.groupedUrlOptionText .groupedUrlOptionDescription {
   font-family: inherit;
   font-size: 12px;
   line-height: 1.45;
 }
 
-.sponsorProtocolGrid {
+.groupedProtocolGrid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 8px;
@@ -543,7 +421,7 @@
   }
 }
 
-.sponsorProtocolCard {
+.groupedProtocolCard {
   display: flex;
   min-width: 0;
   flex-direction: column;
@@ -554,57 +432,18 @@
   background: var(--bg-secondary);
 }
 
-.sponsorProtocolName {
+.groupedProtocolName {
   font-size: 12px;
   font-weight: 600;
   color: var(--text-primary);
 }
 
-.sponsorProtocolUrl {
+.groupedProtocolUrl {
   font-family: $font-mono;
   font-size: 11px;
   line-height: 1.4;
   color: var(--muted-foreground);
   overflow-wrap: anywhere;
-}
-
-.sponsorUsageSection {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.sponsorUsageResult {
-  width: 100%;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 8px 10px;
-  border: 1px solid color-mix(in srgb, var(--success-color) 34%, var(--border-color));
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--success-color) 8%, var(--bg-primary));
-  color: var(--text-primary);
-  font-size: 11px;
-  line-height: 1.4;
-}
-
-.sponsorUsageResultWarning {
-  color: var(--warning-text);
-  border-color: var(--warning-border);
-  background: var(--warning-bg);
-}
-
-.sponsorUsageMain {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 500;
-}
-
-.sponsorUsageMeta {
-  color: var(--muted-foreground);
 }
 
 .connectivityRow {

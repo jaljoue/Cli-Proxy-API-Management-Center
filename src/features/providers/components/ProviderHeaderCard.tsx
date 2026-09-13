@@ -3,7 +3,6 @@ import { IconLoader2, IconPlus, IconRefreshCw } from '@/components/ui/icons';
 import styles from './ProviderHeaderCard.module.scss';
 
 interface ProviderHeaderCardProps {
-  title?: string;
   totalActive: number;
   totalResources: number;
   providerFamilies: number;
@@ -13,13 +12,11 @@ interface ProviderHeaderCardProps {
   showNewAction?: boolean;
   showSummary?: boolean;
   newLabel?: string;
-  variant?: 'quickStart';
   onRefresh: () => void;
   onNew: () => void;
 }
 
 export function ProviderHeaderCard({
-  title,
   totalActive,
   totalResources,
   providerFamilies,
@@ -29,20 +26,16 @@ export function ProviderHeaderCard({
   showNewAction = true,
   showSummary = true,
   newLabel,
-  variant,
   onRefresh,
   onNew,
 }: ProviderHeaderCardProps) {
   const { t } = useTranslation();
-  const cardClassName = [styles.card, variant === 'quickStart' ? styles.quickStartCard : '']
-    .filter(Boolean)
-    .join(' ');
 
   return (
-    <section className={cardClassName}>
+    <section className={styles.card}>
       <div className={styles.row}>
         <div className={styles.titleArea}>
-          <h1 className={styles.title}>{title ?? t('providersPage.header.title')}</h1>
+          <h1 className={styles.title}>{t('providersPage.header.title')}</h1>
         </div>
         <div className={styles.actions}>
           <button

@@ -349,7 +349,7 @@ export function buildTimelineLane(input: TimelineLaneInput): TimelineLane {
 
   if (!quota || quota.status !== 'success') return empty;
 
-  if (provider === 'claude' || provider === 'codex') {
+  if (provider === 'claude' || provider === 'codex' || provider === 'opencode-go') {
     const windows = ((quota as { windows?: WindowLike[] }).windows ?? []).filter(
       (window) => typeof window.resetAtMs === 'number'
     );
@@ -396,7 +396,7 @@ export function buildTimelineLane(input: TimelineLaneInput): TimelineLane {
       ...empty,
       anchorMs: chosen.resetAtMs ?? null,
       periodHours: chosen.periodHours ?? null,
-      // Claude and Codex store percent USED.
+      // Claude, Codex and OpenCode Go store percent USED.
       remaining:
         typeof chosen.usedPercent === 'number' ? clampPercent(100 - chosen.usedPercent) : null,
       limits: windows

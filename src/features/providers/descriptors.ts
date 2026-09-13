@@ -17,7 +17,7 @@ export interface ProviderDescriptor {
   supportsWebsockets: boolean;
   supportsCloak: boolean;
   supportsApiKeyEntries: boolean;
-  /** Sheet 默认宽度 */
+  /** Default Sheet width */
   sheetSize: 'md' | 'lg' | 'xl';
 }
 
@@ -155,63 +155,6 @@ export const PROVIDER_DESCRIPTORS: Record<ProviderBrand, ProviderDescriptor> = {
     supportsApiKeyEntries: true,
     sheetSize: 'lg',
   },
-  apikeyFun: {
-    id: 'apikeyFun',
-    supportsName: false,
-    supportsApiKey: true,
-    supportsDisabled: true,
-    supportsBaseUrl: false,
-    baseUrlRequired: false,
-    supportsProxyUrl: true,
-    supportsPrefix: true,
-    supportsModels: false,
-    supportsHeaders: false,
-    supportsExcludedModels: false,
-    supportsPriority: true,
-    supportsTestModel: false,
-    supportsWebsockets: false,
-    supportsCloak: false,
-    supportsApiKeyEntries: false,
-    sheetSize: 'md',
-  },
-  fennoAI: {
-    id: 'fennoAI',
-    supportsName: false,
-    supportsApiKey: true,
-    supportsDisabled: true,
-    supportsBaseUrl: false,
-    baseUrlRequired: false,
-    supportsProxyUrl: true,
-    supportsPrefix: true,
-    supportsModels: false,
-    supportsHeaders: false,
-    supportsExcludedModels: false,
-    supportsPriority: true,
-    supportsTestModel: false,
-    supportsWebsockets: false,
-    supportsCloak: false,
-    supportsApiKeyEntries: false,
-    sheetSize: 'md',
-  },
-  qiniuCloud: {
-    id: 'qiniuCloud',
-    supportsName: false,
-    supportsApiKey: true,
-    supportsDisabled: true,
-    supportsBaseUrl: false,
-    baseUrlRequired: false,
-    supportsProxyUrl: true,
-    supportsPrefix: true,
-    supportsModels: false,
-    supportsHeaders: false,
-    supportsExcludedModels: false,
-    supportsPriority: true,
-    supportsTestModel: false,
-    supportsWebsockets: false,
-    supportsCloak: false,
-    supportsApiKeyEntries: false,
-    sheetSize: 'md',
-  },
   kimi: {
     id: 'kimi',
     supportsName: false,
@@ -234,7 +177,6 @@ export const PROVIDER_DESCRIPTORS: Record<ProviderBrand, ProviderDescriptor> = {
 };
 
 export const PROVIDER_BRAND_ORDER: ProviderBrand[] = [
-  'kimi',
   'gemini',
   'interactions',
   'codex',
@@ -242,7 +184,5 @@ export const PROVIDER_BRAND_ORDER: ProviderBrand[] = [
   'claude',
   'vertex',
   'openaiCompatibility',
-  'apikeyFun',
-  'fennoAI',
-  'qiniuCloud',
+  'kimi',
 ];

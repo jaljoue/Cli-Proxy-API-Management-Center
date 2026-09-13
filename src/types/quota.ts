@@ -397,3 +397,46 @@ export interface XaiQuotaState {
   error?: string;
   errorStatus?: number;
 }
+
+// OpenCode Go (opencode-go-cliproxyapi plugin) payload types
+export interface OpencodeGoUsageWindowPayload {
+  status?: string | null;
+  /** Percent of the window already USED, 0..100. */
+  percent?: number | string | null;
+  resets_at?: string | null;
+  resetsAt?: string | null;
+}
+
+export interface OpencodeGoUsagePayload {
+  rolling?: OpencodeGoUsageWindowPayload | null;
+  weekly?: OpencodeGoUsageWindowPayload | null;
+  monthly?: OpencodeGoUsageWindowPayload | null;
+}
+
+export interface OpencodeGoQuotaCardPayload {
+  key_id?: string;
+  keyId?: string;
+  label?: string;
+  usage?: OpencodeGoUsagePayload | null;
+}
+
+export interface OpencodeGoQuotaWindow {
+  id: 'rolling' | 'weekly' | 'monthly';
+  label: string;
+  labelKey: string;
+  usedPercent: number | null;
+  resetLabel: string;
+  /** Reset instant in epoch ms; null when the payload carried no parseable timestamp. */
+  resetAtMs?: number | null;
+  /** 5 for the rolling window, 168 weekly, ~720 monthly. */
+  periodHours?: number | null;
+  /** Upstream window status verbatim (`ok`, `exceeded`, …); null when absent. */
+  windowStatus?: string | null;
+}
+
+export interface OpencodeGoQuotaState {
+  status: 'idle' | 'loading' | 'success' | 'error';
+  windows: OpencodeGoQuotaWindow[];
+  error?: string;
+  errorStatus?: number;
+}

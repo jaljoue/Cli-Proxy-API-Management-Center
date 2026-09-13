@@ -1,6 +1,6 @@
 /**
- * 配置相关类型定义
- * 与基线 /config 返回结构保持一致（内部使用驼峰形式）
+ * Configuration type definitions
+ * Matches the baseline /config response structure (camelCase used internally)
  */
 
 import type { GeminiKeyConfig, ProviderKeyConfig, OpenAIProviderConfig } from './provider';

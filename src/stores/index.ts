@@ -1,6 +1,4 @@
-/**
- * Zustand Stores 统一导出
- */
+/** Shared Zustand store exports. */
 
 export { useNotificationStore } from './useNotificationStore';
 export { useThemeStore } from './useThemeStore';

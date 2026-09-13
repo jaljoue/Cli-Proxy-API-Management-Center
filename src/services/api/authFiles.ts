@@ -1,5 +1,5 @@
 /**
- * 认证文件与 OAuth 排除模型相关 API
+ * Auth file and OAuth excluded-model APIs
  */
 
 import { apiClient } from './client';
@@ -236,9 +236,9 @@ const readRuntimeOnlyField = (entry: AuthFileEntry): boolean => {
 };
 
 /**
- * 契约边界归一化：把后端 kebab/snake_case 生字段填充到 AuthFileItem 声明的
- * camelCase 字段上。原始字段全部透传——quota resolvers 仍直接读
- * plan_type / id_token / metadata / attributes 等生字段。
+ * Contract-boundary normalization: fill the camelCase fields declared on AuthFileItem
+ * from the backend's raw kebab/snake_case fields. All raw fields pass through -- quota
+ * resolvers still read plan_type / id_token / metadata / attributes etc. directly.
  */
 const normalizeAuthFileEntry = (entry: AuthFileEntry): AuthFileEntry => {
   const declaredStatusMessage =
@@ -246,8 +246,9 @@ const normalizeAuthFileEntry = (entry: AuthFileEntry): AuthFileEntry => {
   const statusMessage = readTextField(entry, 'status_message') || declaredStatusMessage;
   const note = readTextField(entry, 'note');
   const email = readTextField(entry, 'email');
-  // account / account_type 故意不归一化：api-key 类凭证的 account 就是 API key 本身
-  // （sdk/cliproxy/auth/types.go AccountInfo），不能进入展示与搜索路径。
+  // account / account_type are deliberately not normalized: for api-key credentials, account is
+  // the API key itself (sdk/cliproxy/auth/types.go AccountInfo) and must stay out of display and
+  // search paths.
   const projectId = readTextField(entry, 'project_id');
   const modified = readDateField(entry);
   const priority = readIntegerField(entry['priority']);
@@ -470,7 +471,7 @@ export const authFilesApi = {
     return blob.text();
   },
 
-  // OAuth 排除模型
+  // OAuth excluded models
   async getOauthExcludedModels(): Promise<Record<string, string[]>> {
     const data = await apiClient.get('/oauth-excluded-models');
     return normalizeOauthExcludedModels(data);
@@ -490,7 +491,7 @@ export const authFilesApi = {
   replaceOauthExcludedModels: (map: Record<string, string[]>) =>
     apiClient.put('/oauth-excluded-models', normalizeOauthExcludedModels(map)),
 
-  // OAuth 模型别名
+  // OAuth model aliases
   async getOauthModelAlias(): Promise<Record<string, OAuthModelAliasEntry[]>> {
     const data = await apiClient.get(OAUTH_MODEL_ALIAS_ENDPOINT);
     return normalizeOauthModelAlias(data);
@@ -523,7 +524,7 @@ export const authFilesApi = {
     }
   },
 
-  // 获取认证凭证支持的模型
+  // Fetch the models supported by an auth credential
   async getModelsForAuthFile(
     name: string
   ): Promise<{ id: string; display_name?: string; type?: string; owned_by?: string }[]> {
@@ -536,7 +537,7 @@ export const authFilesApi = {
       : [];
   },
 
-  // 获取指定 channel 的模型定义
+  // Fetch model definitions for a given channel
   async getModelDefinitions(
     channel: string
   ): Promise<{ id: string; display_name?: string; type?: string; owned_by?: string }[]> {

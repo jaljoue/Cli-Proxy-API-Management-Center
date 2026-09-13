@@ -3,14 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { Collapsible } from '@/components/ui/Collapsible';
 import { Select } from '@/components/ui/Select';
 import {
-  IconAlertTriangle,
   IconChevronDown,
-  IconCheckCircle2,
-  IconDollarSign,
   IconDownload,
   IconEye,
   IconEyeOff,
-  IconLoader2,
   IconPlus,
   IconX,
 } from '@/components/ui/icons';
@@ -18,73 +14,70 @@ import { hasDisableAllModelsRule } from '@/components/providers/utils';
 import { maskApiKey } from '@/utils/format';
 import { MAX_CREDENTIAL_WEIGHT } from '@/utils/credentialWeight';
 import type { ModelInfo } from '@/utils/models';
-import type { ApiKeyFunUsageSummary } from '../../sponsor';
 import { readThinkingLevels } from '../../thinkingLevels';
-import { isSponsorPartialMutationError } from '../../sponsorMutationRecovery';
+import { isGroupedPartialMutationError } from '../../groupedMutationRecovery';
 import {
-  discoveryBrandForSponsorProtocol,
-  getSponsorAggregationConflict,
-  getSponsorProviderDefinition,
-  sponsorProtocolI18nKey,
-  sponsorProtocolModelI18nKey,
-  sponsorProtocolUrl,
-  type SponsorProviderDefinition,
-} from '../../sponsorDefinitions';
+  discoveryBrandForGroupedProtocol,
+  getGroupedAggregationConflict,
+  getGroupedProviderDefinition,
+  groupedProtocolI18nKey,
+  groupedProtocolModelI18nKey,
+  groupedProtocolUrl,
+  type GroupedProviderDefinition,
+} from '../../groupedProviders';
 import type {
+  GroupedKeyEntryInput,
+  GroupedProtocol,
+  GroupedProviderBrand,
+  GroupedProviderRaw,
   ModelEntryInput,
   ProviderEntryFormInput,
   ProviderResource,
-  SponsorKeyEntryInput,
-  SponsorProtocol,
-  SponsorProviderBrand,
-  SponsorProviderRaw,
 } from '../../types';
 import { ModelDiscoveryPanel } from './ModelDiscoveryPanel';
 import { ModelEntriesEditor } from './ModelEntriesEditor';
 import { useModelDiscovery, type UseModelDiscoveryResult } from './useModelDiscovery';
-import { useSponsorUsageCheck, type SponsorUsageMessages } from './useSponsorUsageCheck';
 import styles from './sharedForm.module.scss';
 
-interface SponsorProviderFormProps {
-  brand?: SponsorProviderBrand;
+interface GroupedProviderFormProps {
+  brand?: GroupedProviderBrand;
   resource: ProviderResource | null;
   mode: 'create' | 'edit';
   mutating: boolean;
   formId: string;
-  variant?: 'quickStart';
   onSubmit: (input: ProviderEntryFormInput) => Promise<void>;
   onDirtyChange?: (dirty: boolean) => void;
 }
 
-interface SponsorModelSectionProps {
+interface GroupedModelSectionProps {
   label: string;
   description: string;
-  protocol: SponsorProtocol;
+  protocol: GroupedProtocol;
   models: ModelEntryInput[];
   discovery: UseModelDiscoveryResult;
   mutating: boolean;
   onChange: (next: ModelEntryInput[]) => void;
 }
 
-interface SponsorKeyEntryCardProps {
-  entry: SponsorKeyEntryInput;
+interface GroupedKeyEntryCardProps {
+  entry: GroupedKeyEntryInput;
   index: number;
   formId: string;
   mode: 'create' | 'edit';
-  definition: SponsorProviderDefinition;
-  usedProtocols: Set<SponsorProtocol>;
+  definition: GroupedProviderDefinition;
+  usedProtocols: Set<GroupedProtocol>;
   canRemove: boolean;
   mutating: boolean;
-  onChange: (entry: SponsorKeyEntryInput) => void;
+  onChange: (entry: GroupedKeyEntryInput) => void;
   onRemove: () => void;
 }
 
 const emptyModel = (): ModelEntryInput => ({ name: '', alias: '' });
 
-const emptySponsorKeyEntry = (
-  definition: SponsorProviderDefinition,
-  protocol: SponsorProtocol = definition.defaultProtocol
-): SponsorKeyEntryInput => ({
+const emptyGroupedKeyEntry = (
+  definition: GroupedProviderDefinition,
+  protocol: GroupedProtocol = definition.defaultProtocol
+): GroupedKeyEntryInput => ({
   protocol,
   apiKey: '',
   existingApiKey: '',
@@ -98,7 +91,7 @@ const emptySponsorKeyEntry = (
   models: [emptyModel()],
 });
 
-const emptySponsorForm = (definition: SponsorProviderDefinition): ProviderEntryFormInput => ({
+const emptyGroupedForm = (definition: GroupedProviderDefinition): ProviderEntryFormInput => ({
   apiKey: '',
   name: '',
   baseUrl: '',
@@ -111,36 +104,21 @@ const emptySponsorForm = (definition: SponsorProviderDefinition): ProviderEntryF
   models: [],
   headers: [],
   excludedModelsText: '',
-  sponsorKeyEntries: [emptySponsorKeyEntry(definition)],
+  groupedKeyEntries: [emptyGroupedKeyEntry(definition)],
 });
 
-const getSponsorRaw = (
+const getGroupedRaw = (
   resource: ProviderResource | null,
-  brand: SponsorProviderBrand
-): SponsorProviderRaw | null => {
+  brand: GroupedProviderBrand
+): GroupedProviderRaw | null => {
   if (!resource || resource.brand !== brand) return null;
-  return resource.raw as SponsorProviderRaw;
+  return resource.raw as GroupedProviderRaw;
 };
 
 const protocolUrlForEntry = (
-  entry: SponsorKeyEntryInput,
-  definition: SponsorProviderDefinition
-): string => sponsorProtocolUrl(definition.getProtocolUrls(entry.baseUrl), entry.protocol);
-
-const formatUsageAmount = (value: ApiKeyFunUsageSummary['remaining'], locale: string): string => {
-  if (value === null) return '--';
-  if (typeof value === 'number') {
-    return new Intl.NumberFormat(locale, {
-      maximumFractionDigits: 6,
-    }).format(value);
-  }
-  return value;
-};
-
-const isHealthyUsageSummary = (summary: ApiKeyFunUsageSummary): boolean => {
-  const normalizedStatus = (summary.status ?? '').trim().toLowerCase();
-  return summary.isValid && (!normalizedStatus || normalizedStatus === 'active');
-};
+  entry: GroupedKeyEntryInput,
+  definition: GroupedProviderDefinition
+): string => groupedProtocolUrl(definition.getProtocolUrls(entry.baseUrl), entry.protocol);
 
 const modelsFromConfig = (
   models:
@@ -166,15 +144,15 @@ const modelsFromConfig = (
       }))
     : [emptyModel()];
 
-const sponsorEntryFromProviderKey = (
-  definition: SponsorProviderDefinition,
-  protocol: Exclude<SponsorProtocol, 'openai'>,
+const groupedEntryFromProviderKey = (
+  definition: GroupedProviderDefinition,
+  protocol: Exclude<GroupedProtocol, 'openai'>,
   config:
-    | SponsorProviderRaw['codex'][number]['config']
-    | SponsorProviderRaw['claude'][number]['config']
-    | SponsorProviderRaw['gemini'][number]['config']
-): SponsorKeyEntryInput => ({
-  ...emptySponsorKeyEntry(definition, protocol),
+    | GroupedProviderRaw['codex'][number]['config']
+    | GroupedProviderRaw['claude'][number]['config']
+    | GroupedProviderRaw['gemini'][number]['config']
+): GroupedKeyEntryInput => ({
+  ...emptyGroupedKeyEntry(definition, protocol),
   existingApiKey: config.apiKey ?? '',
   baseUrl: definition.resolveBaseUrl(config.baseUrl),
   proxyUrl: config.proxyUrl ?? '',
@@ -186,13 +164,13 @@ const sponsorEntryFromProviderKey = (
   models: modelsFromConfig(config.models),
 });
 
-const sponsorEntryFromOpenAI = (
-  definition: SponsorProviderDefinition,
-  config: SponsorProviderRaw['openai'][number]['config']
-): SponsorKeyEntryInput => {
+const groupedEntryFromOpenAI = (
+  definition: GroupedProviderDefinition,
+  config: GroupedProviderRaw['openai'][number]['config']
+): GroupedKeyEntryInput => {
   const firstEntry = config.apiKeyEntries?.find((entry) => entry.apiKey?.trim());
   return {
-    ...emptySponsorKeyEntry(definition, 'openai'),
+    ...emptyGroupedKeyEntry(definition, 'openai'),
     existingApiKey: firstEntry?.apiKey ?? '',
     baseUrl: definition.resolveBaseUrl(config.baseUrl),
     proxyUrl: firstEntry?.proxyUrl ?? '',
@@ -205,20 +183,20 @@ const sponsorEntryFromOpenAI = (
   };
 };
 
-const sponsorKeyEntriesFromRaw = (
-  raw: SponsorProviderRaw | null,
-  definition: SponsorProviderDefinition
-): SponsorKeyEntryInput[] => {
-  if (!raw) return [emptySponsorKeyEntry(definition)];
-  const entries = definition.protocols.flatMap((protocol): SponsorKeyEntryInput[] => {
+const groupedKeyEntriesFromRaw = (
+  raw: GroupedProviderRaw | null,
+  definition: GroupedProviderDefinition
+): GroupedKeyEntryInput[] => {
+  if (!raw) return [emptyGroupedKeyEntry(definition)];
+  const entries = definition.protocols.flatMap((protocol): GroupedKeyEntryInput[] => {
     if (protocol === 'openai') {
       const openai = raw.openai[0]?.config;
-      return openai ? [sponsorEntryFromOpenAI(definition, openai)] : [];
+      return openai ? [groupedEntryFromOpenAI(definition, openai)] : [];
     }
     const config = raw[protocol][0]?.config;
-    return config ? [sponsorEntryFromProviderKey(definition, protocol, config)] : [];
+    return config ? [groupedEntryFromProviderKey(definition, protocol, config)] : [];
   });
-  return entries.length ? entries : [emptySponsorKeyEntry(definition)];
+  return entries.length ? entries : [emptyGroupedKeyEntry(definition)];
 };
 
 const applyDiscoveredModels = (
@@ -254,7 +232,7 @@ const applyDiscoveredModels = (
   return next.length ? next : [emptyModel()];
 };
 
-function SponsorModelSection({
+function GroupedModelSection({
   label,
   description,
   protocol,
@@ -262,7 +240,7 @@ function SponsorModelSection({
   discovery,
   mutating,
   onChange,
-}: SponsorModelSectionProps) {
+}: GroupedModelSectionProps) {
   const { t } = useTranslation();
   const [discoveryOpen, setDiscoveryOpen] = useState(false);
   const modelsList = useMemo(() => (models.length ? models : [emptyModel()]), [models]);
@@ -334,7 +312,7 @@ function SponsorModelSection({
   );
 }
 
-function SponsorKeyEntryCard({
+function GroupedKeyEntryCard({
   entry,
   index,
   formId,
@@ -345,46 +323,22 @@ function SponsorKeyEntryCard({
   mutating,
   onChange,
   onRemove,
-}: SponsorKeyEntryCardProps) {
-  const { t, i18n } = useTranslation();
+}: GroupedKeyEntryCardProps) {
+  const { t } = useTranslation();
   const [showApiKey, setShowApiKey] = useState(false);
   const [expanded, setExpanded] = useState(
     () => mode === 'create' || !entry.existingApiKey?.trim()
   );
   const endpointUrl = protocolUrlForEntry(entry, definition);
   const protocolLabel = t(
-    `providersPage.sponsor.protocols.${sponsorProtocolI18nKey(entry.protocol)}`
+    `providersPage.grouped.protocols.${groupedProtocolI18nKey(entry.protocol)}`
   );
-  const titleLabel = t('providersPage.sponsor.groupedKey', { index: index + 1 });
+  const titleLabel = t('providersPage.grouped.groupedKey', { index: index + 1 });
   const summaryKey = entry.apiKey.trim() || entry.existingApiKey?.trim() || '';
   const summaryKeyLabel = summaryKey
     ? maskApiKey(summaryKey)
     : t('providersPage.status.notConfigured');
-  const modelKey = sponsorProtocolModelI18nKey(entry.protocol);
-  const usageMessages = useMemo<SponsorUsageMessages>(
-    () => ({
-      apiKeyRequired: t('providersPage.sponsor.usageApiKeyRequired'),
-      emptyResponse: t('providersPage.sponsor.usageEmpty'),
-      requestFailed: t('providersPage.connectivity.requestFailed'),
-    }),
-    [t]
-  );
-  const usageCheck = useSponsorUsageCheck(
-    {
-      baseUrl: entry.baseUrl,
-      apiKey: entry.apiKey,
-      fallbackApiKey: entry.existingApiKey,
-    },
-    usageMessages
-  );
-  const usageSummary = usageCheck.status.summary;
-  const usageHealthy = usageSummary ? isHealthyUsageSummary(usageSummary) : true;
-  const usageRemaining =
-    usageSummary !== null ? formatUsageAmount(usageSummary.remaining, i18n.language) : '';
-  const usageUsed =
-    usageSummary !== null ? formatUsageAmount(usageSummary.used, i18n.language) : '';
-  const usageLimit =
-    usageSummary !== null ? formatUsageAmount(usageSummary.limit, i18n.language) : '';
+  const modelKey = groupedProtocolModelI18nKey(entry.protocol);
   const discoveryHeaders = useMemo<Array<{ key: string; value: string }>>(() => [], []);
   const openaiDiscoveryEntries = useMemo(
     () => [
@@ -397,7 +351,7 @@ function SponsorKeyEntryCard({
     [entry.apiKey, entry.existingApiKey, entry.proxyUrl]
   );
   const discovery = useModelDiscovery({
-    brand: discoveryBrandForSponsorProtocol(entry.protocol),
+    brand: discoveryBrandForGroupedProtocol(entry.protocol),
     baseUrl: endpointUrl,
     formHeaders: discoveryHeaders,
     apiKey: entry.apiKey,
@@ -408,10 +362,10 @@ function SponsorKeyEntryCard({
     .filter((protocol) => protocol === entry.protocol || !usedProtocols.has(protocol))
     .map((protocol) => ({
       value: protocol,
-      label: t(`providersPage.sponsor.protocols.${sponsorProtocolI18nKey(protocol)}`),
+      label: t(`providersPage.grouped.protocols.${groupedProtocolI18nKey(protocol)}`),
     }));
 
-  const updateEntry = (patch: Partial<SponsorKeyEntryInput>) => {
+  const updateEntry = (patch: Partial<GroupedKeyEntryInput>) => {
     onChange({ ...entry, ...patch });
   };
 
@@ -424,13 +378,13 @@ function SponsorKeyEntryCard({
           aria-expanded={expanded}
           onClick={() => setExpanded((value) => !value)}
         >
-          <span className={styles.sponsorGroupTitle}>
+          <span className={styles.groupedGroupTitle}>
             <span>{titleLabel}</span>
             <strong>{protocolLabel}</strong>
           </span>
-          <span className={styles.sponsorGroupSummary}>
-            <span className={styles.sponsorSummaryKey}>{summaryKeyLabel}</span>
-            <span className={styles.sponsorSummaryUrl}>{endpointUrl}</span>
+          <span className={styles.groupedGroupSummary}>
+            <span className={styles.groupedSummaryKey}>{summaryKeyLabel}</span>
+            <span className={styles.groupedSummaryUrl}>{endpointUrl}</span>
           </span>
         </button>
         <div className={styles.entryCardHeaderRight}>
@@ -453,8 +407,8 @@ function SponsorKeyEntryCard({
             className={styles.removeBtn}
             onClick={onRemove}
             disabled={mutating || !canRemove}
-            title={t('providersPage.sponsor.removeGroupedKey')}
-            aria-label={t('providersPage.sponsor.removeGroupedKey')}
+            title={t('providersPage.grouped.removeGroupedKey')}
+            aria-label={t('providersPage.grouped.removeGroupedKey')}
           >
             <IconX size={12} />
           </button>
@@ -465,32 +419,32 @@ function SponsorKeyEntryCard({
         <div className={styles.entryCardBody}>
           <div className={styles.field}>
             <label className={styles.label} htmlFor={`${formId}-group-${index}-protocol`}>
-              {t('providersPage.sponsor.protocol')}
+              {t('providersPage.grouped.protocol')}
             </label>
             <Select
               id={`${formId}-group-${index}-protocol`}
               value={entry.protocol}
               options={protocolOptions}
               onChange={(value) =>
-                updateEntry({ protocol: value as SponsorProtocol, models: [emptyModel()] })
+                updateEntry({ protocol: value as GroupedProtocol, models: [emptyModel()] })
               }
               disabled={mutating}
-              ariaLabel={t('providersPage.sponsor.protocol')}
+              ariaLabel={t('providersPage.grouped.protocol')}
             />
-            <span className={styles.labelHint}>{t('providersPage.sponsor.protocolHint')}</span>
+            <span className={styles.labelHint}>{t('providersPage.grouped.protocolHint')}</span>
           </div>
 
           {definition.baseUrlOptions.length > 1 ? (
             <div className={styles.field}>
               <span className={styles.label}>
-                {t('providersPage.sponsor.urlMode', { provider: definition.displayName })}
+                {t('providersPage.grouped.urlMode', { provider: definition.displayName })}
               </span>
-              <div className={styles.sponsorUrlOptions} role="radiogroup">
+              <div className={styles.groupedUrlOptions} role="radiogroup">
                 {definition.baseUrlOptions.map((option) => {
                   const checked = definition.resolveBaseUrl(entry.baseUrl) === option.baseUrl;
                   const className = [
-                    styles.sponsorUrlOption,
-                    checked ? styles.sponsorUrlOptionActive : '',
+                    styles.groupedUrlOption,
+                    checked ? styles.groupedUrlOptionActive : '',
                   ]
                     .filter(Boolean)
                     .join(' ');
@@ -504,13 +458,13 @@ function SponsorKeyEntryCard({
                         onChange={() => updateEntry({ baseUrl: option.baseUrl })}
                         disabled={mutating}
                       />
-                      <span className={styles.sponsorUrlOptionText}>
-                        <span>{t(`providersPage.sponsor.urlOptions.${option.id}`)}</span>
+                      <span className={styles.groupedUrlOptionText}>
+                        <span>{t(`providersPage.grouped.urlOptions.${option.id}`)}</span>
                         <small>{option.baseUrl}</small>
                         {option.descriptionKey ? (
-                          <small className={styles.sponsorUrlOptionDescription}>
+                          <small className={styles.groupedUrlOptionDescription}>
                             {t(
-                              `providersPage.sponsor.urlOptionDescriptions.${option.descriptionKey}`
+                              `providersPage.grouped.urlOptionDescriptions.${option.descriptionKey}`
                             )}
                           </small>
                         ) : null}
@@ -519,15 +473,15 @@ function SponsorKeyEntryCard({
                   );
                 })}
               </div>
-              <span className={styles.labelHint}>{t('providersPage.sponsor.urlHint')}</span>
+              <span className={styles.labelHint}>{t('providersPage.grouped.urlHint')}</span>
             </div>
           ) : null}
 
-          <div className={styles.sponsorProtocolCard}>
-            <span className={styles.sponsorProtocolName}>
-              {t('providersPage.sponsor.protocolEndpoint')}
+          <div className={styles.groupedProtocolCard}>
+            <span className={styles.groupedProtocolName}>
+              {t('providersPage.grouped.protocolEndpoint')}
             </span>
-            <span className={styles.sponsorProtocolUrl}>{endpointUrl}</span>
+            <span className={styles.groupedProtocolUrl}>{endpointUrl}</span>
           </div>
 
           <div className={styles.field}>
@@ -571,78 +525,8 @@ function SponsorKeyEntryCard({
                 {showApiKey ? <IconEyeOff size={16} /> : <IconEye size={16} />}
               </button>
             </div>
-            <span className={styles.labelHint}>{t('providersPage.sponsor.apiKeyHint')}</span>
+            <span className={styles.labelHint}>{t('providersPage.grouped.apiKeyHint')}</span>
           </div>
-
-          {definition.supportsUsageCheck ? (
-            <div className={styles.sponsorUsageSection}>
-              <button
-                type="button"
-                className={styles.connectivityBtn}
-                onClick={() => void usageCheck.run()}
-                disabled={mutating || usageCheck.isLoading}
-              >
-                {usageCheck.isLoading ? (
-                  <IconLoader2 className={styles.statusIconLoading} size={14} />
-                ) : (
-                  <IconDollarSign size={14} />
-                )}
-                <span>
-                  {usageCheck.isLoading
-                    ? t('providersPage.sponsor.usageChecking')
-                    : t('providersPage.sponsor.usageCheck')}
-                </span>
-              </button>
-              {usageCheck.status.state === 'success' && usageSummary ? (
-                <div
-                  className={[
-                    styles.sponsorUsageResult,
-                    usageHealthy ? '' : styles.sponsorUsageResultWarning,
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                >
-                  <div className={styles.sponsorUsageMain}>
-                    {usageHealthy ? (
-                      <IconCheckCircle2
-                        className={`${styles.statusIcon} ${styles.statusIconSuccess}`}
-                        size={14}
-                      />
-                    ) : (
-                      <IconAlertTriangle
-                        className={`${styles.statusIcon} ${styles.statusIconError}`}
-                        size={14}
-                      />
-                    )}
-                    <span>
-                      {t('providersPage.sponsor.usageRemaining', {
-                        amount: usageRemaining,
-                        unit: usageSummary.unit,
-                      })}
-                    </span>
-                  </div>
-                  {usageSummary.used !== null || usageSummary.limit !== null ? (
-                    <span className={styles.sponsorUsageMeta}>
-                      {t('providersPage.sponsor.usageBreakdown', {
-                        used: usageUsed,
-                        limit: usageLimit,
-                      })}
-                    </span>
-                  ) : null}
-                  {!usageHealthy ? (
-                    <span className={styles.sponsorUsageMeta}>
-                      {t('providersPage.sponsor.usageStatus', {
-                        status: usageSummary.status || t('providersPage.sponsor.usageInvalid'),
-                      })}
-                    </span>
-                  ) : null}
-                </div>
-              ) : null}
-              {usageCheck.status.state === 'error' ? (
-                <div className={styles.connectivityError}>{usageCheck.status.message}</div>
-              ) : null}
-            </div>
-          ) : null}
 
           <div className={styles.field}>
             <label className={styles.label} htmlFor={`${formId}-group-${index}-proxy`}>
@@ -740,9 +624,9 @@ function SponsorKeyEntryCard({
             </span>
           </label>
 
-          <SponsorModelSection
-            label={t(`providersPage.sponsor.protocolModels.${modelKey}`)}
-            description={t(`providersPage.sponsor.protocolModelHints.${modelKey}`)}
+          <GroupedModelSection
+            label={t(`providersPage.grouped.protocolModels.${modelKey}`)}
+            description={t(`providersPage.grouped.protocolModelHints.${modelKey}`)}
             protocol={entry.protocol}
             models={entry.models}
             discovery={discovery}
@@ -756,30 +640,29 @@ function SponsorKeyEntryCard({
 }
 
 const buildInitialForm = (
-  definition: SponsorProviderDefinition,
+  definition: GroupedProviderDefinition,
   resource: ProviderResource | null,
   mode: 'create' | 'edit'
 ): ProviderEntryFormInput => {
-  if (mode === 'create') return emptySponsorForm(definition);
-  const raw = getSponsorRaw(resource, definition.brand);
+  if (mode === 'create') return emptyGroupedForm(definition);
+  const raw = getGroupedRaw(resource, definition.brand);
   return {
-    ...emptySponsorForm(definition),
-    sponsorKeyEntries: sponsorKeyEntriesFromRaw(raw, definition),
+    ...emptyGroupedForm(definition),
+    groupedKeyEntries: groupedKeyEntriesFromRaw(raw, definition),
   };
 };
 
-export function SponsorProviderForm({
-  brand = 'apikeyFun',
+export function GroupedProviderForm({
+  brand = 'kimi',
   resource,
   mode,
   mutating,
   formId,
-  variant,
   onSubmit,
   onDirtyChange,
-}: SponsorProviderFormProps) {
+}: GroupedProviderFormProps) {
   const { t } = useTranslation();
-  const definition = useMemo(() => getSponsorProviderDefinition(brand), [brand]);
+  const definition = useMemo(() => getGroupedProviderDefinition(brand), [brand]);
   const [form, setForm] = useState<ProviderEntryFormInput>(() =>
     buildInitialForm(definition, resource, mode)
   );
@@ -788,8 +671,8 @@ export function SponsorProviderForm({
   );
   const [error, setError] = useState<string | null>(null);
   const entries = useMemo(
-    () => form.sponsorKeyEntries ?? [emptySponsorKeyEntry(definition)],
-    [definition, form.sponsorKeyEntries]
+    () => form.groupedKeyEntries ?? [emptyGroupedKeyEntry(definition)],
+    [definition, form.groupedKeyEntries]
   );
   const usedProtocols = useMemo(() => new Set(entries.map((entry) => entry.protocol)), [entries]);
   const missingProtocols = useMemo(
@@ -798,7 +681,7 @@ export function SponsorProviderForm({
   );
 
   const isDirty = useMemo(
-    () => JSON.stringify({ ...form, sponsorKeyEntries: entries }) !== initialFormSignature,
+    () => JSON.stringify({ ...form, groupedKeyEntries: entries }) !== initialFormSignature,
     [entries, form, initialFormSignature]
   );
 
@@ -806,38 +689,38 @@ export function SponsorProviderForm({
     onDirtyChange?.(isDirty);
   }, [isDirty, onDirtyChange]);
 
-  const updateEntries = (nextEntries: SponsorKeyEntryInput[]) => {
-    setForm((prev) => ({ ...prev, sponsorKeyEntries: nextEntries }));
+  const updateEntries = (nextEntries: GroupedKeyEntryInput[]) => {
+    setForm((prev) => ({ ...prev, groupedKeyEntries: nextEntries }));
   };
 
-  const updateEntry = (entryIndex: number, nextEntry: SponsorKeyEntryInput) => {
+  const updateEntry = (entryIndex: number, nextEntry: GroupedKeyEntryInput) => {
     updateEntries(entries.map((entry, index) => (index === entryIndex ? nextEntry : entry)));
   };
 
   const removeEntry = (entryIndex: number) => {
     const nextEntries = entries.filter((_, index) => index !== entryIndex);
     updateEntries(
-      nextEntries.length || mode === 'edit' ? nextEntries : [emptySponsorKeyEntry(definition)]
+      nextEntries.length || mode === 'edit' ? nextEntries : [emptyGroupedKeyEntry(definition)]
     );
   };
 
   const addEntry = () => {
     const protocol = missingProtocols[0];
     if (!protocol) return;
-    updateEntries([...entries, emptySponsorKeyEntry(definition, protocol)]);
+    updateEntries([...entries, emptyGroupedKeyEntry(definition, protocol)]);
   };
 
   const validateEntries = (): string | null => {
     if (!entries.length) {
-      return mode === 'edit' ? null : t('providersPage.sponsor.validation.keyRequired');
+      return mode === 'edit' ? null : t('providersPage.grouped.validation.keyRequired');
     }
     const missingKey = entries.some(
       (entry) => !entry.apiKey.trim() && !entry.existingApiKey?.trim()
     );
-    if (missingKey) return t('providersPage.sponsor.validation.keyRequired');
+    if (missingKey) return t('providersPage.grouped.validation.keyRequired');
     const protocolSet = new Set(entries.map((entry) => entry.protocol));
     if (protocolSet.size !== entries.length) {
-      return t('providersPage.sponsor.validation.protocolDuplicate');
+      return t('providersPage.grouped.validation.protocolDuplicate');
     }
     if (
       entries.some((entry) => entry.weight !== undefined && !Number.isSafeInteger(entry.weight))
@@ -861,11 +744,11 @@ export function SponsorProviderForm({
     }
     try {
       setError(null);
-      await onSubmit({ ...form, sponsorKeyEntries: entries });
+      await onSubmit({ ...form, groupedKeyEntries: entries });
     } catch (err) {
       setError(
-        isSponsorPartialMutationError(err)
-          ? t('providersPage.sponsor.partialMutationWarning')
+        isGroupedPartialMutationError(err)
+          ? t('providersPage.grouped.partialMutationWarning')
           : err instanceof Error
             ? err.message
             : String(err)
@@ -873,18 +756,16 @@ export function SponsorProviderForm({
     }
   };
 
-  const formClassName = [styles.form, variant === 'quickStart' ? styles.quickStartForm : '']
-    .filter(Boolean)
-    .join(' ');
+  const formClassName = styles.form;
   const aggregationConflict =
     mode === 'edit'
-      ? getSponsorAggregationConflict(getSponsorRaw(resource, definition.brand))
+      ? getGroupedAggregationConflict(getGroupedRaw(resource, definition.brand))
       : null;
 
   if (aggregationConflict) {
     return (
       <form id={formId} className={formClassName} onSubmit={(event) => event.preventDefault()}>
-        <div className={styles.errorBox}>{t('providersPage.sponsor.aggregationConflict')}</div>
+        <div className={styles.errorBox}>{t('providersPage.grouped.aggregationConflict')}</div>
       </form>
     );
   }
@@ -892,9 +773,9 @@ export function SponsorProviderForm({
   return (
     <form id={formId} className={formClassName} onSubmit={handleSubmit} noValidate>
       <div className={styles.section}>
-        <h3 className={styles.sectionTitle}>{t('providersPage.sponsor.groupedKeysTitle')}</h3>
+        <h3 className={styles.sectionTitle}>{t('providersPage.grouped.groupedKeysTitle')}</h3>
         {entries.map((entry, index) => (
-          <SponsorKeyEntryCard
+          <GroupedKeyEntryCard
             key={`${entry.protocol}-${index}`}
             entry={entry}
             index={index}
@@ -915,7 +796,7 @@ export function SponsorProviderForm({
           onClick={addEntry}
         >
           <IconPlus size={12} />
-          <span>{t('providersPage.sponsor.addGroupedKey')}</span>
+          <span>{t('providersPage.grouped.addGroupedKey')}</span>
         </button>
       </div>
 

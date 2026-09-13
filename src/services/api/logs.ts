@@ -1,6 +1,4 @@
-/**
- * 日志相关 API
- */
+/** Logging API. */
 
 import { apiClient } from './client';
 import { LOGS_TIMEOUT_MS } from '@/utils/constants';

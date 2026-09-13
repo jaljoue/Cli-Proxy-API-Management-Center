@@ -23,7 +23,7 @@ import styles from './dashboard.module.scss';
 
 const DASH = '—';
 
-/** KPI 卡左上角色签：有语义色调的卡用状态色，其余保持中性 */
+/** KPI labels use the card's semantic status color when present, otherwise a neutral color. */
 const TILE_ACCENTS: Record<MeterTone, string> = {
   good: 'var(--viz-success)',
   warning: 'var(--amber-color)',
@@ -31,7 +31,7 @@ const TILE_ACCENTS: Record<MeterTone, string> = {
   idle: 'var(--text-quaternary)',
 };
 
-/** 大数字：六位以内用千分位，再往上压缩，避免撑破排版 */
+/** Use thousands separators through six digits, then compact notation to fit the layout. */
 const formatHeadline = (value: number): string =>
   value < 100_000 ? value.toLocaleString() : formatCompactNumber(value);
 
@@ -45,7 +45,7 @@ export function DashboardPage() {
 
   useHeaderRefresh(refresh, connected);
 
-  /* Hero 与静态网格走分组级联；异步内容区（图表/供应商）保持整块 reveal */
+  /* Stagger the hero and static grid; reveal asynchronous charts and providers as whole blocks. */
   const heroRef = useRevealGroup<HTMLElement>();
   const statsRef = useRevealGroup<HTMLElement>(0.12);
   const trafficRef = useRevealOnScroll<HTMLElement>();
@@ -82,7 +82,7 @@ export function DashboardPage() {
   const unknownProviderLabel = t('dashboard.provider_unknown');
   const successRateTone = toneForSuccessRate(traffic.successRate);
 
-  /** 标题是算出来的判词，不是写死的口号；句尾句号充当状态灯 */
+  /** Derive the title from status; its final period acts as a status indicator. */
   const verdict = useMemo(() => {
     if (!connected) {
       return connectionStatus === 'connecting'
@@ -101,7 +101,7 @@ export function DashboardPage() {
     return { key: keyByTone[successRateTone], accent: TILE_ACCENTS[successRateTone] };
   }, [connected, connectionStatus, traffic.total, traffic.successRate, successRateTone]);
 
-  /* 句号状态灯只在「有活着的流量」时呼吸；离线/静默时保持安静 */
+  /* Pulse the status period only with live traffic; keep it still when offline or idle. */
   const heroAlive = connected && traffic.total > 0;
 
   const connectionLabel = t(

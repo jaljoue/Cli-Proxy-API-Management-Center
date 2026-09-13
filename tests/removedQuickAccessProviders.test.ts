@@ -9,17 +9,35 @@ const retiredEndpoints = [
   ['infistar', 'https://infistar.ai'],
   ['claudeApi', 'https://gw.apito.ai'],
   ['claudeApi', 'https://gw.claudeapi.com'],
+  ['apikeyFun', 'https://api.apikey.fan'],
+  ['apikeyFun', 'https://slb.apikey.fan'],
+  ['fennoAI', 'https://api.fenno.ai'],
+  ['qiniuCloud', 'https://api.qnaigc.com'],
+  ['qiniuCloud', 'https://api.modelink.ai'],
 ] as const;
 
 describe('removed quick-access providers', () => {
+  test('ships no sponsor promotions or quick-start route', async () => {
+    const sourceRoot = new URL('../src/', import.meta.url).pathname;
+    const files = new Bun.Glob('**/*.{ts,tsx,scss,json}').scanSync({
+      cwd: sourceRoot,
+      absolute: true,
+    });
+    const promotionalContent =
+      /sponsor|apikeyFun|fennoAI|qiniuCloud|bestproxy|apimart|apikey\.fan|\/quick-start/i;
+    const matches: string[] = [];
+    for (const file of files) {
+      if (promotionalContent.test(await Bun.file(file).text())) matches.push(file);
+    }
+    expect(matches).toEqual([]);
+  });
+
   test('removes retired brand groups', () => {
     const ids = buildProviderGroups({}).map((group) => group.id);
     for (const [brand] of retiredEndpoints) {
       expect(ids).not.toContain(brand);
     }
-    for (const brand of ['apikeyFun', 'fennoAI', 'qiniuCloud', 'kimi']) {
-      expect(ids).toContain(brand);
-    }
+    expect(ids).toContain('kimi');
   });
 
   for (const [name, baseUrl] of retiredEndpoints) {

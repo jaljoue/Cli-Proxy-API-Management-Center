@@ -30,7 +30,7 @@ const classes = bindQuotaClasses(
  */
 const now = Date.now();
 
-// The i18n fallback is zh-CN; pin English so the countdown assertions read.
+// Pin English so the countdown assertions read regardless of the host locale.
 beforeAll(async () => {
   await i18n.changeLanguage('en');
 });

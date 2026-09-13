@@ -7,8 +7,6 @@ import { OAuthEditorProviderCard } from '../src/features/authFiles/components/OA
 import { OAuthAliasMappingRow } from '../src/features/authFiles/components/OAuthAliasMappingRow';
 import { SecondaryScreenShell } from '../src/components/common/SecondaryScreenShell';
 import en from '../src/i18n/locales/en.json';
-import zhCN from '../src/i18n/locales/zh-CN.json';
-import zhTW from '../src/i18n/locales/zh-TW.json';
 import ru from '../src/i18n/locales/ru.json';
 
 const i18n = createInstance();
@@ -100,8 +98,8 @@ describe('OAuth editor UI', () => {
     expect(disabledRow.match(/disabled=""/g)).toHaveLength(4);
   });
 
-  test('all four locales include editor guidance and accessible row labels', () => {
-    for (const locale of [en, zhCN, zhTW, ru]) {
+  test('all locales include editor guidance and accessible row labels', () => {
+    for (const locale of [en, ru]) {
       expect(locale.oauth_excluded.editor_description.length).toBeGreaterThan(0);
       expect(locale.oauth_excluded.models_hint.length).toBeGreaterThan(0);
       expect(locale.oauth_model_alias.editor_description.length).toBeGreaterThan(0);

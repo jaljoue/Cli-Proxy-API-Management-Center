@@ -1,14 +1,10 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  ELITE_CODEX_PLAN_TYPE,
-  PREMIUM_CODEX_PLAN_TYPES,
-  resolvePlanTier,
-} from '@/utils/quota';
+import { ELITE_CODEX_PLAN_TYPE, PREMIUM_CODEX_PLAN_TYPES, resolvePlanTier } from '@/utils/quota';
 
 describe('resolvePlanTier', () => {
   test("elite wins for 'pro' even though it is also in the premium set (order contract)", () => {
-    // 顺序契约回归：'pro' 同时命中 PREMIUM_CODEX_PLAN_TYPES，
-    // 一旦 premium 判断先行，Pro 20x 会静默退回金卡。
+    // Ordering regression: pro also matches PREMIUM_CODEX_PLAN_TYPES.
+    // Checking premium first would incorrectly render Pro 20x with gold styling.
     expect(PREMIUM_CODEX_PLAN_TYPES.has(ELITE_CODEX_PLAN_TYPE)).toBe(true);
     expect(resolvePlanTier('pro')).toBe('elite');
   });

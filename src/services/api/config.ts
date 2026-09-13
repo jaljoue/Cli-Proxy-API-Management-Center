@@ -1,5 +1,5 @@
 /**
- * 配置相关 API
+ * Config APIs
  */
 
 import { apiClient } from './client';
@@ -8,7 +8,7 @@ import { normalizeConfigResponse } from './transformers';
 
 export const configApi = {
   /**
-   * 获取配置（会进行字段规范化）
+   * Fetch the config (fields are normalized)
    */
   async getConfig(): Promise<Config> {
     const raw = await apiClient.get('/config');
@@ -16,7 +16,7 @@ export const configApi = {
   },
 
   /**
-   * 请求日志开关
+   * Request logging toggle
    */
   updateRequestLog: (enabled: boolean) => apiClient.put('/request-log', { value: enabled }),
 };

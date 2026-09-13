@@ -1,5 +1,5 @@
 /**
- * OAuth 与设备码登录相关 API
+ * OAuth and device-code login APIs
  */
 
 import { apiClient } from './client';

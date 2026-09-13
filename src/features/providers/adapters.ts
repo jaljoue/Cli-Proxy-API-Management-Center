@@ -2,24 +2,6 @@ import type { GeminiKeyConfig, OpenAIProviderConfig, ProviderKeyConfig } from '@
 import { hasDisableAllModelsRule, stripDisableAllModelsRule } from '@/components/providers/utils';
 import { maskApiKey } from '@/utils/format';
 import {
-  APIKEY_FUN_DISPLAY_NAME,
-  APIKEY_FUN_PROTOCOLS,
-  getApiKeyFunProtocolUrls,
-  resolveApiKeyFunBaseUrl,
-} from './sponsor';
-import {
-  FENNO_AI_DISPLAY_NAME,
-  FENNO_AI_PROTOCOL_LABELS,
-  getFennoAIProtocolUrls,
-  resolveFennoAIBaseUrl,
-} from './fennoAI';
-import {
-  QINIU_CLOUD_DISPLAY_NAME,
-  QINIU_CLOUD_PROTOCOL_LABELS,
-  getQiniuCloudProtocolUrls,
-  resolveQiniuCloudBaseUrl,
-} from './qiniuCloud';
-import {
   KIMI_DISPLAY_NAME,
   KIMI_PROTOCOL_LABELS,
   getKimiProtocolUrls,
@@ -29,8 +11,8 @@ import type {
   ProviderBrand,
   ProviderResource,
   ProviderResourceSelector,
-  SponsorProviderBrand,
-  SponsorProviderRaw,
+  GroupedProviderBrand,
+  GroupedProviderRaw,
 } from './types';
 
 const countHeaders = (headers?: Record<string, string>): number =>
@@ -161,7 +143,7 @@ export function openaiToResource(config: OpenAIProviderConfig, index: number): P
   };
 }
 
-interface SponsorResourceOptions {
+interface GroupedResourceOptions {
   displayName: string;
   protocolLabels: readonly string[];
   resolveBaseUrl: (value: string | undefined | null) => string;
@@ -173,10 +155,10 @@ interface SponsorResourceOptions {
   };
 }
 
-function sponsorRawToResource(
-  brand: SponsorProviderBrand,
-  raw: SponsorProviderRaw,
-  options: SponsorResourceOptions
+function groupedRawToResource(
+  brand: GroupedProviderBrand,
+  raw: GroupedProviderRaw,
+  options: GroupedResourceOptions
 ): ProviderResource | null {
   if (
     raw.openai.length === 0 &&
@@ -251,7 +233,7 @@ function sponsorRawToResource(
   const protocolUrls = options.getProtocolUrls(baseUrl);
 
   return {
-    id: buildId(brand, 0, 'sponsor'),
+    id: buildId(brand, 0, 'grouped'),
     brand,
     originalIndex: 0,
     name: options.displayName,
@@ -307,35 +289,8 @@ function sponsorRawToResource(
   };
 }
 
-export function apiKeyFunToResource(raw: SponsorProviderRaw): ProviderResource | null {
-  return sponsorRawToResource('apikeyFun', raw, {
-    displayName: APIKEY_FUN_DISPLAY_NAME,
-    protocolLabels: APIKEY_FUN_PROTOCOLS,
-    resolveBaseUrl: resolveApiKeyFunBaseUrl,
-    getProtocolUrls: getApiKeyFunProtocolUrls,
-  });
-}
-
-export function fennoAIToResource(raw: SponsorProviderRaw): ProviderResource | null {
-  return sponsorRawToResource('fennoAI', raw, {
-    displayName: FENNO_AI_DISPLAY_NAME,
-    protocolLabels: FENNO_AI_PROTOCOL_LABELS,
-    resolveBaseUrl: resolveFennoAIBaseUrl,
-    getProtocolUrls: getFennoAIProtocolUrls,
-  });
-}
-
-export function qiniuCloudToResource(raw: SponsorProviderRaw): ProviderResource | null {
-  return sponsorRawToResource('qiniuCloud', raw, {
-    displayName: QINIU_CLOUD_DISPLAY_NAME,
-    protocolLabels: QINIU_CLOUD_PROTOCOL_LABELS,
-    resolveBaseUrl: resolveQiniuCloudBaseUrl,
-    getProtocolUrls: getQiniuCloudProtocolUrls,
-  });
-}
-
-export function kimiToResource(raw: SponsorProviderRaw): ProviderResource | null {
-  return sponsorRawToResource('kimi', raw, {
+export function kimiToResource(raw: GroupedProviderRaw): ProviderResource | null {
+  return groupedRawToResource('kimi', raw, {
     displayName: KIMI_DISPLAY_NAME,
     protocolLabels: KIMI_PROTOCOL_LABELS,
     resolveBaseUrl: resolveKimiBaseUrl,

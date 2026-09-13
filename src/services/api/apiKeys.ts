@@ -1,5 +1,5 @@
 /**
- * API 密钥管理
+ * API key management
  */
 
 import { apiClient } from './client';

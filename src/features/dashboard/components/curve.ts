@@ -4,8 +4,9 @@ export interface CurvePoint {
 }
 
 /**
- * Catmull-Rom → 三次贝塞尔的平滑折线。
- * 控制点的 y 被夹在 [minY, maxY] 内，避免尖峰处的曲线越过基线或顶边。
+ * Convert Catmull-Rom points to a smooth cubic Bezier path.
+ * Clamp control-point y values to [minY, maxY] so peaks cannot overshoot the baseline or upper
+ * edge.
  */
 export function buildSmoothLinePath(points: CurvePoint[], minY: number, maxY: number): string {
   if (points.length === 0) return '';

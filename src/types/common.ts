@@ -1,10 +1,10 @@
 /**
- * 通用类型定义
+ * Shared type definitions.
  */
 
 export type Theme = 'light' | 'white' | 'dark' | 'auto';
 
-export type Language = 'zh-CN' | 'zh-TW' | 'en' | 'ru';
+export type Language = 'en' | 'ru';
 
 export type NotificationType = 'info' | 'success' | 'warning' | 'error';
 

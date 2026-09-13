@@ -4,7 +4,7 @@
 
 import type { TypeColorSet } from '@/types';
 
-// Theme colors for type badges — 与 authFiles/constants.ts 保持同步
+// Theme colors for type badges; keep authFiles/constants.ts in sync.
 export const TYPE_COLORS: Record<string, TypeColorSet> = {
   qwen: {
     light: { bg: '#ede5fd', text: '#5530c7' },
@@ -45,6 +45,10 @@ export const TYPE_COLORS: Record<string, TypeColorSet> = {
   vertex: {
     light: { bg: '#e4edfd', text: '#2b5fbc' },
     dark: { bg: '#1a3d80', text: '#89b3f7' },
+  },
+  'opencode-go': {
+    light: { bg: '#e8e6e2', text: '#131010' },
+    dark: { bg: '#34302c', text: '#f0eee8' },
   },
   empty: {
     light: { bg: '#f5f5f5', text: '#616161' },

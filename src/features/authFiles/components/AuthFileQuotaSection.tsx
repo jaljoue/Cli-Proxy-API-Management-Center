@@ -15,7 +15,8 @@ import { bindQuotaClasses } from '@/features/quota/types';
 import { QUOTA_ADAPTERS, type QuotaCardState } from '@/features/quota/providers';
 import styles from './AuthFileQuota.module.scss';
 
-/** 认证文件卡片外衣：紧凑额度样式绑定成类型化契约（缺键在模块初始化即抛）。 */
+/** Auth file card skin: compact quota styles bound to a typed contract (missing keys throw
+ * at init). */
 const compactQuotaClasses = bindQuotaClasses(styles, 'AuthFileQuota.module.scss');
 
 const assertNever = (value: never): never => {
@@ -47,6 +48,8 @@ export function AuthFileQuotaSection(props: AuthFileQuotaSectionProps) {
     if (quotaType === 'codex') return state.codexQuota[file.name] as QuotaCardState | undefined;
     if (quotaType === 'kimi') return state.kimiQuota[file.name] as QuotaCardState | undefined;
     if (quotaType === 'xai') return state.xaiQuota[file.name] as QuotaCardState | undefined;
+    if (quotaType === 'opencode-go')
+      return state.opencodeGoQuota[file.name] as QuotaCardState | undefined;
     return assertNever(quotaType);
   });
 

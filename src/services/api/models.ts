@@ -1,5 +1,5 @@
 /**
- * 可用模型获取
+ * Available model fetching
  */
 
 import axios from 'axios';

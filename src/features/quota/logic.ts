@@ -1,6 +1,6 @@
 /**
- * 额度页纯逻辑：文件归类、tab 过滤、计数、分页。
- * React-free —— 由 tests/quotaPageLogic.test.ts 直接消费。
+ * React-free quota classification, tab filtering, counts and pagination.
+ * Tested directly in tests/quotaPageLogic.test.ts.
  */
 
 import type { AuthFileItem } from '@/types';
@@ -9,6 +9,7 @@ import { CLAUDE_CONFIG } from './providers/claude/data';
 import { CODEX_CONFIG } from './providers/codex/data';
 import { KIMI_CONFIG } from './providers/kimi/data';
 import { XAI_CONFIG } from './providers/xai/data';
+import { OPENCODE_GO_CONFIG } from './providers/opencodeGo/data';
 import type { QuotaProviderType } from './providers/types';
 import { QUOTA_TAB_ORDER, type QuotaSortMode, type QuotaTabId } from './constants';
 
@@ -18,6 +19,7 @@ const QUOTA_FILTER_MAP: Record<QuotaProviderType, (file: AuthFileItem) => boolea
   codex: CODEX_CONFIG.filterFn,
   kimi: KIMI_CONFIG.filterFn,
   xai: XAI_CONFIG.filterFn,
+  'opencode-go': OPENCODE_GO_CONFIG.filterFn,
 };
 
 export interface QuotaFileEntry {
@@ -29,8 +31,8 @@ export const resolveQuotaProviderType = (file: AuthFileItem): QuotaProviderType 
   QUOTA_TAB_ORDER.find((type) => QUOTA_FILTER_MAP[type](file)) ?? null;
 
 /**
- * 把文件列表归类为额度条目：不支持额度或已停用的文件被过滤，
- * 结果按 QUOTA_TAB_ORDER 分组排列（'全部' tab 的卡片顺序即由此决定）。
+ * Classify supported, enabled files into quota entries.
+ * Group by QUOTA_TAB_ORDER, which also controls card order in the All tab.
  */
 export function classifyQuotaFiles(files: AuthFileItem[]): QuotaFileEntry[] {
   const groups = new Map<QuotaProviderType, QuotaFileEntry[]>(
@@ -107,7 +109,7 @@ export interface QuotaPagination<T> {
   totalPages: number;
 }
 
-/** 页码越界时收敛到有效区间（列表缩短后停留在最后一页而不是空页）。 */
+/** Clamp page numbers so a shrinking list leaves users on the last valid page. */
 export function paginate<T>(items: T[], page: number, pageSize: number): QuotaPagination<T> {
   const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
   const currentPage = Math.min(Math.max(1, page), totalPages);

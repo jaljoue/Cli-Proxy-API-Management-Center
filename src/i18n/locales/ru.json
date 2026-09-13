@@ -97,7 +97,6 @@
   },
   "nav": {
     "dashboard": "Панель",
-    "quick_start": "Быстрый старт",
     "ai_providers": "Поставщики AI",
     "auth_files": "Файлы аутентификации",
     "oauth": "OAuth вход",
@@ -116,7 +115,6 @@
   },
   "nav_meta": {
     "dashboard": "Обзор работы",
-    "quick_start": "Настройка APIKEY.FUN",
     "ai_providers": "Маршрутизация моделей",
     "auth_files": "Файлы и учётные данные",
     "oauth": "Авторизация OAuth",
@@ -295,6 +293,7 @@
     "filter_antigravity": "Antigravity",
     "filter_xai": "xAI",
     "filter_iflow": "iFlow",
+    "filter_opencode-go": "OpenCode Go",
     "filter_vertex": "Vertex",
     "filter_empty": "Пусто",
     "filter_unknown": "Другое",
@@ -513,6 +512,19 @@
     "pay_as_you_go_enabled": "Включено, лимит {{cap}}",
     "pay_as_you_go_disabled": "Отключено"
   },
+  "opencode_go_quota": {
+    "title": "Квота OpenCode Go",
+    "empty_title": "Нет учётных данных OpenCode Go",
+    "empty_desc": "Настройте API-ключ в плагине opencode-go-cliproxyapi, чтобы отслеживать его использование здесь.",
+    "idle": "Нажмите, чтобы обновить квоту",
+    "loading": "Загрузка квоты...",
+    "load_failed": "Не удалось загрузить квоту: {{message}}",
+    "missing_key_id": "Учётные данные не являются записью ключа OpenCode Go",
+    "empty_windows": "Нет данных о квоте",
+    "rolling_limit": "Лимит на 5 часов",
+    "weekly_limit": "Недельный лимит",
+    "monthly_limit": "Месячный лимит"
+  },
   "vertex_import": {
     "title": "Вход с Vertex JSON",
     "description": "Загрузите JSON ключа сервисного аккаунта Google, чтобы сохранить его как auth-dir/vertex-<project>.json по тем же правилам, что и помощник CLI vertex-import.",
@@ -698,7 +710,6 @@
     "antigravity_oauth_polling_error": "Не удалось проверить статус аутентификации:",
     "kimi_oauth_title": "Kimi OAuth",
     "kimi_oauth_button": "Войти через Kimi",
-    "kimi_sign_up_button": "Зарегистрироваться сейчас",
     "kimi_oauth_hint": "Быстро войдите в Kimi через авторизацию устройства. Файлы авторизации будут получены и сохранены автоматически.",
     "kimi_oauth_url_label": "URL авторизации:",
     "kimi_open_link": "Открыть ссылку",
@@ -1012,7 +1023,6 @@
           "title": "Сетевые настройки",
           "description": "Параметры прокси, повторов и маршрутизации",
           "proxy_url": "URL прокси",
-          "proxy_url_sponsor_hint": "Нет подходящего прокси?",
           "request_retry": "Количество повторов запросов",
           "max_retry_credentials": "Максимум учётных данных для повторов",
           "max_retry_credentials_hint": "Оставьте пустым, чтобы не задавать поле. Значение 0 сохраняет legacy-поведение и позволяет перебрать все доступные учётные данные.",
@@ -1170,7 +1180,7 @@
   },
   "quota_management": {
     "title": "Управление квотами",
-    "description": "Следите за статусом квот OAuth для учётных данных Antigravity, Codex, Claude, Kimi и xAI.",
+    "description": "Следите за квотами учётных данных Antigravity, Codex, Claude, Kimi, xAI и OpenCode Go.",
     "refresh_all_credentials": "Обновить все учётные данные",
     "sort_label": "Сортировка",
     "sort_default": "По умолчанию",
@@ -1179,7 +1189,31 @@
     "meta_loaded": "{{count}} загружено",
     "meta_attention": "{{count}} требуют внимания",
     "empty_title": "Нет учётных данных с квотами",
-    "empty_desc": "Подключите учётные данные Antigravity, Claude, Codex, xAI или Kimi, чтобы отслеживать квоту здесь.",
+    "empty_desc": "Подключите учётные данные Antigravity, Claude, Codex, xAI, Kimi или OpenCode Go, чтобы отслеживать их квоту здесь.",
+    "view_label": "Вид",
+    "view_ledger": "Список",
+    "view_cards": "Карточки",
+    "show_emails": "Показать email",
+    "hide_emails": "Скрыть email",
+    "mask_hint": "Email в именах учётных данных скрыты для демонстрации экрана",
+    "summary_of": "из {{total}}%",
+    "summary_credentials_one": "{{count}} учётная запись",
+    "summary_credentials_few": "{{count}} учётные записи",
+    "summary_credentials_many": "{{count}} учётных записей",
+    "summary_credentials_other": "{{count}} учётных записей",
+    "summary_not_loaded": "не загружено",
+    "summary_partial": "загружено {{loaded}} из {{count}}",
+    "summary_filter": "Показать только {{provider}}",
+    "no_reset_pending": "Сброс не ожидается",
+    "renews_at": "продление {{time}}",
+    "count_available": "доступно: {{count}}",
+    "ledger_load": "Загрузить квоту",
+    "ledger_load_all": "Загрузить квоту для {{count}} учётных данных",
+    "ledger_load_hint": "Квота запрашивается по требованию и не опрашивается автоматически. Загрузите один раз, затем обновляйте строки по отдельности.",
+    "ledger_col_credential": "Учётные данные",
+    "ledger_col_limits": "Лимиты",
+    "ledger_col_details": "Детали",
+    "ledger_col_actions": "Действия",
     "windows_title": "Окна квот",
     "windows_span_weekly": "две недели",
     "windows_span_session": "три дня",
@@ -1412,8 +1446,6 @@
   },
   "language": {
     "switch": "Язык",
-    "chinese": "中文",
-    "chinese_tw": "繁體中文（台灣）",
     "english": "English",
     "russian": "Русский"
   },
@@ -1459,7 +1491,6 @@
     },
     "categories": {
       "title": "Провайдеры",
-      "quickFill": "Быстрое заполнение",
       "activeCount": "{{active}}/{{total}} активных"
     },
     "providerNames": {
@@ -1470,9 +1501,6 @@
       "claude": "Claude",
       "vertex": "Vertex",
       "openaiCompatibility": "OpenAI-совместимый",
-      "apikeyFun": "APIKEY.FUN",
-      "fennoAI": "FennoAI",
-      "qiniuCloud": "Qiniu Cloud",
       "kimi": "Kimi"
     },
     "table": {
@@ -1494,27 +1522,12 @@
       "filterPlaceholder": "Поиск по ключам, URL, префиксам…",
       "description": "Управление ресурсами {{route}}"
     },
-    "sponsor": {
-      "protocolSummary": "Anthropic / OpenAI / Gemini / Codex API (Responses)",
+    "grouped": {
       "detailHint": "{{provider}} сохраняется в соответствующие конфигурации API key по протоколам; здесь они управляются вместе.",
-      "registerLink": "Зарегистрироваться",
-      "registerNow": "Зарегистрироваться сейчас",
-      "kimiPromo": "Новые пользователи получают API-квоту в размере 10% от первого успешного пополнения, максимум ¥1000. Предложение действует до 30 сентября.",
-      "dashboardLink": "Панель управления",
-      "emptyRegisterHint": "Конфигурации пока нет.",
       "apiKeyHint": "Этот ключ записывается только в выбранную группу/протокол.",
-      "usageCheck": "Проверить квоту",
-      "usageChecking": "Проверка",
-      "usageRemaining": "Остаток: {{amount}} {{unit}}",
-      "usageBreakdown": "Использовано {{used}} / Лимит {{limit}}",
-      "usageStatus": "Статус: {{status}}",
-      "usageInvalid": "Недействительный ключ",
-      "usageEmpty": "Endpoint не вернул данные квоты.",
-      "usageApiKeyRequired": "Требуется API key",
       "aggregationConflict": "Этот объединённый провайдер содержит несколько серверных конфигураций или ключей OpenAI. Чтобы избежать потери данных, измените исходную конфигурацию.",
       "partialMutationWarning": "Операция завершилась ошибкой, но один или несколько протоколов могли обновиться. Последняя конфигурация загружена повторно; проверьте её перед повторной попыткой.",
       "groupedKeysTitle": "Групповые ключи",
-      "groupedKeysHint": "Ключи платформы могут привязываться к группе при создании. Каждый групповой ключ здесь управляет одним протоколом, а модели загружаются только из этого протокола.",
       "groupedKey": "Групповой ключ #{{index}}",
       "addGroupedKey": "Добавить групповой ключ",
       "removeGroupedKey": "Удалить групповой ключ",
@@ -1524,21 +1537,13 @@
       "urlMode": "{{provider}} URL",
       "urlHint": "Все URL используют одинаковые правила API. При сохранении записывается только endpoint текущего группового протокола.",
       "urlOptions": {
-        "standard": "Обычный URL",
-        "direct": "Прямой URL",
-        "domestic": "Маршрут для материкового Китая",
-        "overseas": "Зарубежный маршрут",
-        "mainlandChina": "Материковый Китай (рекомендуется)",
-        "global": "Глобальный"
+        "domestic": "moonshot.cn",
+        "overseas": "moonshot.ai"
       },
       "urlOptionDescriptions": {
-        "domestic": "Для пользователей и нагрузок в материковом Китае; обычно дает меньшую задержку в сетях материкового Китая.",
-        "overseas": "Для зарубежных развертываний, трансграничного доступа или задач, которым нужны зарубежные модели.",
-        "mainlandChinaRecommended": "Рекомендуется для пользователей и нагрузок в сетях материкового Китая.",
-        "global": "Для пользователей и нагрузок во всех остальных регионах."
+        "domestic": "Endpoint Kimi для аккаунтов материкового Китая (platform.kimi.com).",
+        "overseas": "Международный endpoint Kimi (platform.kimi.ai)."
       },
-      "modelsTitle": "Настройки моделей по протоколам",
-      "modelsHint": "Настраивайте allowlist моделей и алиасы отдельно для маршрутов Codex API, Anthropic, Gemini и OpenAI-compatible.",
       "protocolModels": {
         "codex": "Модели Codex API",
         "anthropic": "Модели Anthropic",
@@ -1555,10 +1560,8 @@
         "keyRequired": "Введите API key для каждого группового ключа.",
         "protocolDuplicate": "Для каждого протокола можно добавить только один групповой ключ."
       },
-      "openaiEntries": "Ключей OpenAI-compatible",
       "codexEntries": "Ключей Codex API",
       "anthropicEntries": "Ключей Anthropic",
-      "geminiEntries": "Ключей Gemini",
       "protocols": {
         "anthropic": "Anthropic",
         "openai": "OpenAI-compatible",

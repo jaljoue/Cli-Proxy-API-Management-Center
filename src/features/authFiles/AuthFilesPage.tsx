@@ -56,7 +56,7 @@ import styles from './AuthFilesPage.module.scss';
 const DEFAULT_REGULAR_PAGE_SIZE = 9;
 const DEFAULT_COMPACT_PAGE_SIZE = 12;
 const SKELETON_CARD_COUNT = 6;
-/** 首屏卡片级联入场总预算，与 useRevealGroup 同一 360ms 语汇。 */
+/** Initial card stagger budget, matching useRevealGroup's 360ms limit. */
 const CARD_ENTRANCE_BUDGET_MS = 360;
 
 const resolveStatusFilterMode = (
@@ -188,7 +188,7 @@ export function AuthFilesPage() {
   const disabledOnly = statusFilterMode === 'disabled';
   const enabledOnly = statusFilterMode === 'enabled';
 
-  /* ---------- uiState 水合与持久化（localStorage key/形状与旧版完全一致） ---------- */
+  /* Hydrate and persist uiState using the existing localStorage key and shape. */
 
   useEffect(() => {
     const persistedCompactMode = readPersistedAuthFilesCompactMode();
@@ -325,7 +325,7 @@ export function AuthFilesPage() {
       if (!Number.isFinite(parsed)) return;
 
       const rounded = Math.round(parsed);
-      // 超出 [MIN, MAX] 时不提交（clamp 后不等于原值即越界）
+      // Reject values outside [MIN, MAX]; clamping changes an out-of-range value.
       if (clampCardPageSize(rounded) !== rounded) return;
 
       setCurrentModePageSize(rounded);
@@ -348,7 +348,7 @@ export function AuthFilesPage() {
     setPage(1);
   }, []);
 
-  /* ---------- 数据加载：首载前台（骨架屏），此后一律后台（不清空网格） ---------- */
+  /* Show skeletons on initial load; subsequent loads run in the background and keep the grid. */
 
   const initialLoadDoneRef = useRef(false);
 
@@ -373,7 +373,7 @@ export function AuthFilesPage() {
     isCurrentLayer ? 240_000 : null
   );
 
-  /* ---------- 过滤 / 排序 / 分页 memos ---------- */
+  /* Filtering, sorting and pagination memos. */
 
   const existingTypes = useMemo(() => {
     const types = new Set<string>(['all']);
@@ -463,15 +463,16 @@ export function AuthFilesPage() {
     batchStatusUpdating ||
     selectedHasStatusUpdating;
 
-  /* ---------- 头部遥测计数 ---------- */
+  /* Header counters. */
 
   const activeCount = useMemo(() => files.filter((file) => file.disabled !== true).length, [files]);
   const problemCount = useMemo(() => files.filter(isProblemAuthFile).length, [files]);
 
-  /* ---------- 首屏卡片一次性级联入场 ----------
-   * 首批数据渲染后立即翻转 cardsAnimated；已挂载的卡片在挂载时捕获过
-   * 自己的延迟（AuthFileCard 内 useState 初始化），不受后续 null 影响，
-   * 而过滤/翻页/轮询新挂载的卡片拿到 null——不重播。 */
+  /*
+   * Animate cards only on the first data load. AuthFileCard captures its delay in useState at
+   * mount. Set cardsAnimated immediately afterward so cards mounted by filtering, pagination or
+   * polling receive null and do not replay.
+   */
 
   const [cardsAnimated, setCardsAnimated] = useState(false);
   const enableCardEntrance = !cardsAnimated && isCurrentLayer && !loading && pageItems.length > 0;
@@ -486,7 +487,7 @@ export function AuthFilesPage() {
     return Math.round((index / (pageItems.length - 1)) * CARD_ENTRANCE_BUDGET_MS);
   };
 
-  /* ---------- 杂项 ---------- */
+  /* Other actions. */
 
   const copyTextWithNotification = useCallback(
     async (text: string) => {

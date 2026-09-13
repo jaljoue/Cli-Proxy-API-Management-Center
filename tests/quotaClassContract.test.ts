@@ -38,7 +38,9 @@ describe('quota class contract', () => {
     delete partial.quotaReset;
     delete partial.quotaResetRelative;
 
-    expect(() => bindQuotaClasses(partial, 'test-host')).toThrow(/quotaReset.*quotaResetRelative/);
+    expect(() => bindQuotaClasses(partial, 'test-host')).toThrow(
+      '[quota] test-host is missing quota contract classes: quotaReset, quotaResetRelative'
+    );
   });
 
   test('bindQuotaClasses returns exactly the contract keys', () => {

@@ -5,22 +5,33 @@ import {
   type QuotaTabId,
 } from './constants';
 
-/** 额度页 UI 偏好：会话级持久化（sessionStorage），跨会话不携带。 */
+/** ledger is the default grouped row list; cards is the card grid. */
+export const QUOTA_VIEW_MODES = ['ledger', 'cards'] as const;
+export type QuotaViewMode = (typeof QUOTA_VIEW_MODES)[number];
+
+/** Persist quota UI preferences in sessionStorage for the current session only. */
 export type QuotaUiState = {
   tab?: QuotaTabId;
   sortMode?: QuotaSortMode;
+  view?: QuotaViewMode;
+  /** Mask emails in credential names by default in every new session. */
+  maskEmails?: boolean;
 };
 
 const QUOTA_UI_STATE_KEY = 'quotaPage.uiState';
 
 const QUOTA_TAB_ID_SET = new Set<string>(['all', ...QUOTA_TAB_ORDER]);
 const QUOTA_SORT_MODE_SET = new Set<string>(QUOTA_SORT_MODES);
+const QUOTA_VIEW_MODE_SET = new Set<string>(QUOTA_VIEW_MODES);
 
 export const isQuotaTabId = (value: unknown): value is QuotaTabId =>
   typeof value === 'string' && QUOTA_TAB_ID_SET.has(value);
 
 export const isQuotaSortMode = (value: unknown): value is QuotaSortMode =>
   typeof value === 'string' && QUOTA_SORT_MODE_SET.has(value);
+
+export const isQuotaViewMode = (value: unknown): value is QuotaViewMode =>
+  typeof value === 'string' && QUOTA_VIEW_MODE_SET.has(value);
 
 export const readQuotaUiState = (): QuotaUiState | null => {
   if (typeof window === 'undefined') return null;
@@ -32,6 +43,8 @@ export const readQuotaUiState = (): QuotaUiState | null => {
     return {
       tab: isQuotaTabId(parsed.tab) ? parsed.tab : undefined,
       sortMode: isQuotaSortMode(parsed.sortMode) ? parsed.sortMode : undefined,
+      view: isQuotaViewMode(parsed.view) ? parsed.view : undefined,
+      maskEmails: typeof parsed.maskEmails === 'boolean' ? parsed.maskEmails : undefined,
     };
   } catch {
     return null;

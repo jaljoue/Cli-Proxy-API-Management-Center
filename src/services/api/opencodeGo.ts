@@ -1,7 +1,7 @@
 /**
  * OpenCode Go quota, served by the opencode-go-cliproxyapi plugin's management route.
  *
- * The plugin registers `POST /v0/management/plugins/opencode-go-cliproxyapi/quota`:
+ * The plugin registers `POST /v0/management/plugins/opencode-go-cliproxyapi/quota-usage`:
  * an empty body lists the configured credentials (no upstream call), a body with
  * `key_id` fetches that credential's usage from OpenCode. The key id is the
  * sha256 of the API key, which is also the credential's auth-file basename.
@@ -14,7 +14,7 @@ import type { OpencodeGoQuotaCardPayload, OpencodeGoUsagePayload } from '@/types
 export const OPENCODE_GO_PLUGIN_ID = 'opencode-go-cliproxyapi';
 export const OPENCODE_GO_KEY_ID_PREFIX = 'opencode-go-key-';
 
-const QUOTA_PATH = `/plugins/${OPENCODE_GO_PLUGIN_ID}/quota`;
+const QUOTA_PATH = `/plugins/${OPENCODE_GO_PLUGIN_ID}/quota-usage`;
 
 const asString = (value: unknown): string | undefined =>
   typeof value === 'string' && value.trim() ? value.trim() : undefined;

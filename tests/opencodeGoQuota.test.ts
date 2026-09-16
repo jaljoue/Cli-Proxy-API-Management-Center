@@ -17,6 +17,7 @@ import {
   getAuthFileIcon,
   getTypeLabel,
 } from '@/features/authFiles/constants';
+import { apiClient, opencodeGoApi } from '@/services/api';
 import { formatQuotaResetTime } from '@/utils/quota';
 import type { AuthFileItem } from '@/types';
 
@@ -24,12 +25,34 @@ const t = ((key: string) => key) as TFunction;
 
 const KEY_ID = 'opencode-go-key-8719680cf09b11b330404dffd7fa6ed71c5f6840baedc08510a7a68228e91721';
 
-/** The exact shape the plugin returns for `POST /plugins/opencode-go-cliproxyapi/quota`. */
+/** The exact shape the plugin returns for `POST /plugins/opencode-go-cliproxyapi/quota-usage`. */
 const usage = {
   rolling: { status: 'ok', percent: 0, resets_at: '2099-09-13T04:19:18.415Z' },
   weekly: { status: 'ok', percent: 12, resets_at: '2099-09-14T00:00:00.415Z' },
   monthly: { status: 'exceeded', percent: 100, resets_at: '2099-09-18T04:38:28.415Z' },
 };
+
+describe('opencodeGoApi', () => {
+  test('refreshes quota through the plugin quota-usage route', async () => {
+    const originalPost = apiClient.post;
+    let request: { url: string; data: unknown } | undefined;
+    apiClient.post = (async (url: string, data?: unknown) => {
+      request = { url, data };
+      return { key_id: KEY_ID, usage };
+    }) as typeof apiClient.post;
+
+    try {
+      const card = await opencodeGoApi.fetchQuota(KEY_ID);
+      expect(request).toEqual({
+        url: '/plugins/opencode-go-cliproxyapi/quota-usage',
+        data: { key_id: KEY_ID },
+      });
+      expect(card?.usage?.weekly?.percent).toBe(12);
+    } finally {
+      apiClient.post = originalPost;
+    }
+  });
+});
 
 describe('buildOpencodeGoQuotaWindows', () => {
   test('builds rolling / weekly / monthly windows in that order with instants and periods', () => {

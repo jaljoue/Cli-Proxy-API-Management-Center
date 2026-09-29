@@ -80,3 +80,20 @@ export const containsEmail = (value: string): boolean => {
  */
 export const shortenCredentialName = (name: string, keep = 12): string =>
   name.replace(/[0-9a-f]{24,}/gi, (digest) => `${digest.slice(0, keep)}…`);
+
+/**
+ * Credential title for cards, ledger rows and timeline lanes. When the file
+ * name does not carry the account email (plugin key records such as
+ * `opencode-go-key-<sha256>.json`), the email leads so the account reads the
+ * same way it does in Claude and Codex file names.
+ */
+export const credentialDisplayName = (
+  name: string,
+  email: string | null | undefined,
+  maskEmails: boolean
+): string => {
+  const shown = shortenCredentialName(maskEmails ? maskCredentialName(name, email) : name);
+  const known = typeof email === 'string' ? email.trim() : '';
+  if (!known || name.toLowerCase().includes(known.toLowerCase())) return shown;
+  return `${maskEmails ? maskKnownEmail(known) : known} · ${shown}`;
+};

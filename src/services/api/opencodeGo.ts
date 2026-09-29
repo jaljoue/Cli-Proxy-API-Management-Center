@@ -5,6 +5,7 @@
  * an empty body lists the configured credentials (no upstream call), a body with
  * `key_id` fetches that credential's usage from OpenCode. The key id is the
  * sha256 of the API key, which is also the credential's auth-file basename.
+ * Keys with All permissions also return the Go plan and the subscriber email.
  */
 
 import { apiClient } from './client';
@@ -43,6 +44,8 @@ const normalizeCard = (value: unknown): OpencodeGoQuotaCardPayload | null => {
   return {
     key_id: keyId,
     label: asString(value.label),
+    plan_type: asString(value.plan_type ?? value.planType),
+    email: asString(value.email),
     usage: normalizeUsage(value.usage),
   };
 };

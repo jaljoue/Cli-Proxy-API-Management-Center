@@ -50,7 +50,7 @@ import type { QuotaProviderType } from './providers/types';
 import { useQuotaActions } from './hooks/useQuotaActions';
 import { useQuotaBatchLoader } from './hooks/useQuotaBatchLoader';
 import { buildLedgerRow } from './ledger/rowModel';
-import { maskCredentialName, shortenCredentialName } from './ledger/mask';
+import { credentialDisplayName } from './ledger/mask';
 import { buildSummaryTile, type SummaryTile } from './ledger/summaryModel';
 import {
   QUOTA_VIEW_MODES,
@@ -66,11 +66,12 @@ const SKELETON_CARD_COUNT = 6;
 /**
  * Derive credential names once for cards, ledger rows and timeline lanes.
  * Mask filename emails as `f•••@e•••.dev`, preferring exact replacement using the backend email.
- * Always shorten long hashes in plugin-generated credential names.
+ * Lead with the account email when the file name lacks it, and always shorten long hashes in
+ * plugin-generated credential names.
  */
 const buildDisplayName =
   (maskEmails: boolean, emailByName: ReadonlyMap<string, string>) => (name: string) =>
-    shortenCredentialName(maskEmails ? maskCredentialName(name, emailByName.get(name)) : name);
+    credentialDisplayName(name, emailByName.get(name), maskEmails);
 
 export function QuotaPage() {
   const { t, i18n } = useTranslation();
@@ -92,17 +93,6 @@ export function QuotaPage() {
   );
   // Stagger title, metadata, actions and tabs at 70ms intervals.
   const revealRef = useRevealGroup<HTMLDivElement>();
-  const emailByName = useMemo(() => {
-    const map = new Map<string, string>();
-    files.forEach((file) => {
-      if (typeof file.email === 'string' && file.email.trim()) map.set(file.name, file.email);
-    });
-    return map;
-  }, [files]);
-  const displayNameFor = useMemo(
-    () => buildDisplayName(maskEmails, emailByName),
-    [maskEmails, emailByName]
-  );
 
   const disableControls = connectionStatus !== 'connected';
 
@@ -151,6 +141,23 @@ export function QuotaPage() {
         'opencode-go': opencodeGoQuota,
       }) as unknown as Record<QuotaProviderType, Record<string, QuotaCardState>>,
     [antigravityQuota, claudeQuota, codexQuota, kimiQuota, xaiQuota, opencodeGoQuota]
+  );
+
+  const emailByName = useMemo(() => {
+    const map = new Map<string, string>();
+    files.forEach((file) => {
+      if (typeof file.email === 'string' && file.email.trim()) map.set(file.name, file.email);
+    });
+    // The plugin saves the OpenCode Go email during a refresh, so it can arrive here before the
+    // file list is reloaded.
+    Object.entries(opencodeGoQuota).forEach(([name, quota]) => {
+      if (!map.has(name) && quota.email) map.set(name, quota.email);
+    });
+    return map;
+  }, [files, opencodeGoQuota]);
+  const displayNameFor = useMemo(
+    () => buildDisplayName(maskEmails, emailByName),
+    [maskEmails, emailByName]
   );
 
   const getQuota = useCallback(

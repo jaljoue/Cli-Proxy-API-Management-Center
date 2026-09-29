@@ -9,6 +9,10 @@ import {
   buildOpencodeGoQuotaWindows,
   resolveOpencodeGoKeyId,
 } from '@/features/quota/providers/opencodeGo/data';
+import {
+  getOpencodeGoPlanLabel,
+  isOpencodeGoPremiumPlan,
+} from '@/features/quota/providers/opencodeGo/presentation';
 import { QUOTA_TAB_ORDER } from '@/features/quota/constants';
 import { collectQuotaRowInstants, nextRecoveryMs } from '@/features/quota/resetSchedule';
 import { buildTimelineLane } from '@/features/quota/quotaTimelineModel';
@@ -48,9 +52,53 @@ describe('opencodeGoApi', () => {
         data: { key_id: KEY_ID },
       });
       expect(card?.usage?.weekly?.percent).toBe(12);
+      expect(card?.plan_type).toBeUndefined();
+      expect(card?.email).toBeUndefined();
     } finally {
       apiClient.post = originalPost;
     }
+  });
+
+  test('reads the plan and subscriber email when the key has Console access', async () => {
+    const originalPost = apiClient.post;
+    apiClient.post = (async () => ({
+      key_id: KEY_ID,
+      plan_type: ' go-plus ',
+      email: 'subscriber@example.com',
+      usage,
+    })) as typeof apiClient.post;
+
+    try {
+      const card = await opencodeGoApi.fetchQuota(KEY_ID);
+      expect(card?.plan_type).toBe('go-plus');
+      expect(card?.email).toBe('subscriber@example.com');
+
+      const data = await OPENCODE_GO_CONFIG.fetchQuota(
+        { name: `${KEY_ID}.json`, provider: 'opencode-go' } as AuthFileItem,
+        t
+      );
+      const state = OPENCODE_GO_CONFIG.buildSuccessState(data);
+      expect(state.planType).toBe('go-plus');
+      expect(state.email).toBe('subscriber@example.com');
+      expect(state.windows).toHaveLength(3);
+    } finally {
+      apiClient.post = originalPost;
+    }
+  });
+});
+
+describe('OpenCode Go plan presentation', () => {
+  test('labels known plans and keeps unknown ones verbatim', () => {
+    expect(getOpencodeGoPlanLabel(t, 'go')).toBe('opencode_go_quota.plan_go');
+    expect(getOpencodeGoPlanLabel(t, 'Go-Plus')).toBe('opencode_go_quota.plan_go_plus');
+    expect(getOpencodeGoPlanLabel(t, 'go-max')).toBe('go-max');
+    expect(getOpencodeGoPlanLabel(t, null)).toBeNull();
+  });
+
+  test('only Go Plus gets the premium badge', () => {
+    expect(isOpencodeGoPremiumPlan('go-plus')).toBe(true);
+    expect(isOpencodeGoPremiumPlan('go')).toBe(false);
+    expect(isOpencodeGoPremiumPlan(undefined)).toBe(false);
   });
 });
 
@@ -135,6 +183,8 @@ describe('OPENCODE_GO_CONFIG', () => {
     });
     expect(success.status).toBe('success');
     expect(success.windows).toHaveLength(3);
+    expect(success.planType).toBeNull();
+    expect(success.email).toBeNull();
   });
 });
 

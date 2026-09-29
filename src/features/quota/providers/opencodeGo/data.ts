@@ -27,6 +27,8 @@ import type { QuotaProviderData } from '../types';
 
 export type OpencodeGoQuotaData = {
   windows: OpencodeGoQuotaWindow[];
+  planType?: string | null;
+  email?: string | null;
 };
 
 /** Window order on the card: shortest first, matching every other provider. */
@@ -87,7 +89,11 @@ const fetchOpencodeGoQuota = async (
   if (!card?.usage) {
     throw new Error(t('opencode_go_quota.empty_windows'));
   }
-  return { windows: buildOpencodeGoQuotaWindows(card.usage, t) };
+  return {
+    windows: buildOpencodeGoQuotaWindows(card.usage, t),
+    planType: card.plan_type ?? null,
+    email: card.email ?? null,
+  };
 };
 
 export const OPENCODE_GO_CONFIG: QuotaProviderData<OpencodeGoQuotaState, OpencodeGoQuotaData> = {
@@ -98,7 +104,12 @@ export const OPENCODE_GO_CONFIG: QuotaProviderData<OpencodeGoQuotaState, Opencod
   storeSelector: (state) => state.opencodeGoQuota,
   storeSetter: 'setOpencodeGoQuota',
   buildLoadingState: () => ({ status: 'loading', windows: [] }),
-  buildSuccessState: (data) => ({ status: 'success', windows: data.windows }),
+  buildSuccessState: (data) => ({
+    status: 'success',
+    windows: data.windows,
+    planType: data.planType ?? null,
+    email: data.email ?? null,
+  }),
   buildErrorState: (message, status) => ({
     status: 'error',
     windows: [],

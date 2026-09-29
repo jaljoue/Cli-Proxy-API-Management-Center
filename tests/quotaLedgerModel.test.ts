@@ -6,6 +6,7 @@ import { describe, expect, test } from 'bun:test';
 import type { TFunction } from 'i18next';
 import {
   containsEmail,
+  credentialDisplayName,
   maskCredentialName,
   maskEmail,
   shortenCredentialName,
@@ -13,7 +14,12 @@ import {
 import { buildLedgerReset, buildLedgerRow } from '@/features/quota/ledger/rowModel';
 import { buildSummaryTile } from '@/features/quota/ledger/summaryModel';
 import { DAY_MS, HOUR_MS } from '@/utils/time/durations';
-import type { ClaudeQuotaState, CodexQuotaState, XaiQuotaState } from '@/types';
+import type {
+  ClaudeQuotaState,
+  CodexQuotaState,
+  OpencodeGoQuotaState,
+  XaiQuotaState,
+} from '@/types';
 
 const t = ((key: string, params?: Record<string, unknown>) =>
   params ? `${key}:${JSON.stringify(params)}` : key) as unknown as TFunction;
@@ -52,6 +58,21 @@ describe('credential name masking', () => {
       'opencode-go-key-8719680cf09b….json'
     );
     expect(shortenCredentialName('codex-ae5d455f-x@y.io.json')).toBe('codex-ae5d455f-x@y.io.json');
+  });
+
+  test('leads with the account email only when the file name lacks it', () => {
+    const name =
+      'opencode-go-key-8719680cf09b11b330404dffd7fa6ed71c5f6840baedc08510a7a68228e91721.json';
+    expect(credentialDisplayName(name, 'first.last@example.dev', true)).toBe(
+      'f•••@e•••.dev · opencode-go-key-8719680cf09b….json'
+    );
+    expect(credentialDisplayName(name, 'first.last@example.dev', false)).toBe(
+      'first.last@example.dev · opencode-go-key-8719680cf09b….json'
+    );
+    expect(credentialDisplayName(name, undefined, true)).toBe('opencode-go-key-8719680cf09b….json');
+    expect(
+      credentialDisplayName('claude-first.last@example.dev.json', 'first.last@example.dev', true)
+    ).toBe('claude-f•••@e•••.dev.json');
   });
 });
 
@@ -202,6 +223,45 @@ describe('buildLedgerRow', () => {
     expect(paid.meters).toEqual([]);
     expect(paid.message).toBe('xai_quota.paid_health');
     expect(paid.planTone).toBe('premium');
+  });
+
+  test('opencode-go: the plan badge is gold for Go Plus and plain for Go', () => {
+    const quota: OpencodeGoQuotaState = {
+      status: 'success',
+      planType: 'go-plus',
+      windows: [
+        {
+          id: 'weekly',
+          label: 'Weekly',
+          labelKey: 'opencode_go_quota.weekly_limit',
+          usedPercent: 12,
+          resetLabel: 'x',
+          resetAtMs: NOW + 3 * DAY_MS,
+          periodHours: 168,
+        },
+      ],
+    };
+    const plus = buildLedgerRow({ type: 'opencode-go', quota, t, now: NOW, locale: 'en' });
+    expect(plus.planLabel).toBe('opencode_go_quota.plan_go_plus');
+    expect(plus.planTone).toBe('premium');
+    expect(plus.meters[0]).toMatchObject({ id: 'weekly', primary: true, remaining: 88 });
+
+    const go = buildLedgerRow({
+      type: 'opencode-go',
+      quota: { ...quota, planType: 'go' },
+      t,
+      now: NOW,
+    });
+    expect(go.planLabel).toBe('opencode_go_quota.plan_go');
+    expect(go.planTone).toBe('plain');
+
+    const unknown = buildLedgerRow({
+      type: 'opencode-go',
+      quota: { ...quota, planType: null },
+      t,
+      now: NOW,
+    });
+    expect(unknown.planLabel).toBeNull();
   });
 
   test('unloaded, loading and errored states project to an empty row', () => {

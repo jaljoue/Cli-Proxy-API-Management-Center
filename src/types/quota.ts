@@ -417,6 +417,10 @@ export interface OpencodeGoQuotaCardPayload {
   key_id?: string;
   keyId?: string;
   label?: string;
+  /** Go product (`go`, `go-plus`); absent when the key lacks Console access. */
+  plan_type?: string;
+  /** Subscriber email from the Console; absent when the key lacks Console access. */
+  email?: string;
   usage?: OpencodeGoUsagePayload | null;
 }
 
@@ -437,6 +441,8 @@ export interface OpencodeGoQuotaWindow {
 export interface OpencodeGoQuotaState {
   status: 'idle' | 'loading' | 'success' | 'error';
   windows: OpencodeGoQuotaWindow[];
+  planType?: string | null;
+  email?: string | null;
   error?: string;
   errorStatus?: number;
 }

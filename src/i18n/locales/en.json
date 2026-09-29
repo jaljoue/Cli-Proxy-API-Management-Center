@@ -524,7 +524,10 @@
     "empty_windows": "No quota data available",
     "rolling_limit": "5-hour limit",
     "weekly_limit": "Weekly limit",
-    "monthly_limit": "Monthly limit"
+    "monthly_limit": "Monthly limit",
+    "plan_label": "Plan",
+    "plan_go": "Go",
+    "plan_go_plus": "Go Plus"
   },
   "vertex_import": {
     "title": "Vertex JSON Login",

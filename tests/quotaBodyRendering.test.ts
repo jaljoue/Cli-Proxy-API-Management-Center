@@ -14,10 +14,16 @@ import i18n from '@/i18n';
 import { CodexQuotaBody } from '@/features/quota/providers/codex/CodexQuotaBody';
 import { ClaudeQuotaBody } from '@/features/quota/providers/claude/ClaudeQuotaBody';
 import { KimiQuotaBody } from '@/features/quota/providers/kimi/KimiQuotaBody';
+import { OpencodeGoQuotaBody } from '@/features/quota/providers/opencodeGo/OpencodeGoQuotaBody';
 import { QUOTA_CLASS_KEYS, bindQuotaClasses } from '@/features/quota/types';
 import { formatInstantShort } from '@/utils/quota';
 import { DAY_MS, HOUR_MS } from '@/utils/time/durations';
-import type { ClaudeQuotaState, CodexQuotaState, KimiQuotaState } from '@/types';
+import type {
+  ClaudeQuotaState,
+  CodexQuotaState,
+  KimiQuotaState,
+  OpencodeGoQuotaState,
+} from '@/types';
 
 const classes = bindQuotaClasses(
   Object.fromEntries(QUOTA_CLASS_KEYS.map((key) => [key, key])),
@@ -163,6 +169,42 @@ describe('KimiQuotaBody', () => {
     expect(markup).toContain('quotaResetRelative');
     expect(markup).toMatch(/3 hours/);
     expect(markup).not.toContain('resets in 3h');
+  });
+});
+
+describe('OpencodeGoQuotaBody', () => {
+  const quota: OpencodeGoQuotaState = {
+    status: 'success',
+    planType: 'go-plus',
+    windows: [
+      {
+        id: 'weekly',
+        label: 'Weekly limit',
+        labelKey: 'opencode_go_quota.weekly_limit',
+        usedPercent: 12,
+        resetLabel: '09-18 00:00',
+        resetAtMs: now + 3 * DAY_MS,
+        periodHours: 168,
+      },
+    ],
+  };
+
+  test('shows Go Plus as a premium plan above the meters', () => {
+    const markup = renderToStaticMarkup(createElement(OpencodeGoQuotaBody, { quota, classes }));
+
+    expect(markup).toContain('Plan');
+    expect(markup).toContain('premiumPlanValue');
+    expect(markup).toContain('Go Plus');
+    expect(markup.indexOf('Go Plus')).toBeLessThan(markup.indexOf('Weekly limit'));
+  });
+
+  test('omits the plan row when the key has no Console access', () => {
+    const markup = renderToStaticMarkup(
+      createElement(OpencodeGoQuotaBody, { quota: { ...quota, planType: null }, classes })
+    );
+
+    expect(markup).not.toContain('codexPlan');
+    expect(markup).toContain('88%');
   });
 });
 

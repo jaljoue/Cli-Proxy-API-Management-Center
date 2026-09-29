@@ -523,7 +523,10 @@
     "empty_windows": "Нет данных о квоте",
     "rolling_limit": "Лимит на 5 часов",
     "weekly_limit": "Недельный лимит",
-    "monthly_limit": "Месячный лимит"
+    "monthly_limit": "Месячный лимит",
+    "plan_label": "Тариф",
+    "plan_go": "Go",
+    "plan_go_plus": "Go Plus"
   },
   "vertex_import": {
     "title": "Вход с Vertex JSON",

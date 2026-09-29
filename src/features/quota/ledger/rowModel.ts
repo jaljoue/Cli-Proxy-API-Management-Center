@@ -44,6 +44,10 @@ import {
 } from '../providers/antigravity/labels';
 import { getCodexPlanLabel, getCodexPlanTier } from '../providers/codex/presentation';
 import {
+  getOpencodeGoPlanLabel,
+  isOpencodeGoPremiumPlan,
+} from '../providers/opencodeGo/presentation';
+import {
   formatXaiOnDemandAmount,
   formatXaiPercent,
   formatXaiRemainingAmount,
@@ -479,6 +483,8 @@ function buildOpencodeGoRow(quota: OpencodeGoQuotaState, input: LedgerRowInput):
   const meters = metersFromWindows(quota.windows ?? [], t, now, locale, urgentId);
   return {
     ...EMPTY_ROW,
+    planLabel: getOpencodeGoPlanLabel(t, quota.planType),
+    planTone: isOpencodeGoPremiumPlan(quota.planType) ? 'premium' : 'plain',
     meters: promotePrimary(meters, firstIdOf(meters, ['weekly'])),
     message: meters.length === 0 ? t('opencode_go_quota.empty_windows') : null,
   };

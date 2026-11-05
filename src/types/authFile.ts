@@ -1,6 +1,5 @@
 /**
- * Auth file related types
- * Based on src/modules/auth-files.js from the original project
+ * Auth-file types.
  */
 
 import type { RecentRequestBucket } from '@/utils/recentRequests';
@@ -12,6 +11,8 @@ export type AuthFileType =
   | 'aistudio'
   | 'claude'
   | 'codex'
+  | 'devin'
+  | 'meta'
   | 'antigravity'
   | 'xai'
   | 'iflow'
@@ -19,21 +20,48 @@ export type AuthFileType =
   | 'empty'
   | 'unknown';
 
+export interface AuthFileCooldown {
+  scope: 'model' | 'credential';
+  modelKey?: string;
+  reason: string;
+  retryAt: string;
+  remainingSeconds: number;
+  backoffLevel?: number;
+  httpStatus?: number;
+}
+
+export interface AuthFileCooldownSnapshot {
+  /** Server observation time, not the start of the cooldown. */
+  observedAt?: string;
+  /** Local receipt time anchors relative timers without relying on synchronized clocks. */
+  receivedAtMs: number;
+  /** null = runtime state unknown; [] = known, with no active timers. */
+  records: AuthFileCooldown[] | null;
+}
+
 export interface AuthFileItem {
   name: string;
+  siwcBindSupported?: boolean;
+  useSiwc?: boolean;
+  siwcBound?: boolean;
+  siwcExpiresAt?: string;
   type?: AuthFileType | string;
   provider?: string;
   /**
-   * Credential account email (both backend auth_files branches fill it: the disk scan reads the
-   * JSON email field, the registry reads Metadata/Attributes). The card's main row leads with it.
-   * Note: the backend also sends account/account_type, but for api-key credentials, account is
-   * the API key itself (AccountInfo() -> return "api_key", apiKey); **never use it for display or search**.
+   * Account email supplied by the file scanner or credential registry.
+   * Never display or search account/account_type: API-key credentials may expose
+   * the API key itself through those fields.
    */
   email?: string;
-  /** GCP / Vertex project ID; identity fallback when the account email is missing. */
+  /** GCP / Vertex project ID, used when account email is absent. */
   projectId?: string;
   size?: number;
   authIndex?: string | number | null;
+  /** Generic plugin quota capability advertised by CPA's auth-files API. */
+  supportsQuota?: boolean;
+  quotaProvider?: string;
+  /** Backend-selected quota plugin; authoritative when supplied by v8 credentials. */
+  quotaPluginId?: string;
   runtimeOnly?: boolean | string;
   disabled?: boolean;
   unavailable?: boolean;
@@ -46,15 +74,19 @@ export interface AuthFileItem {
   note?: string;
   success?: unknown;
   failed?: unknown;
-  /** Normalized cumulative success/failure counts (filled at the API boundary from the raw success/failed fields). */
+  /** Cumulative success/failure counts normalized by the API boundary. */
   successCount?: number;
   failureCount?: number;
   recent_requests?: RecentRequestBucket[];
   recentRequests?: RecentRequestBucket[];
+  /** Absent on older servers. Never interpreted as credential health. */
+  cooldownSnapshot?: AuthFileCooldownSnapshot;
   [key: string]: unknown;
 }
 
 export interface AuthFilesResponse {
   files: AuthFileItem[];
   total?: number;
+  observed_at?: unknown;
+  observedAt?: string;
 }

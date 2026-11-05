@@ -18,5 +18,6 @@ export const configApi = {
   /**
    * Request logging toggle
    */
-  updateRequestLog: (enabled: boolean) => apiClient.put('/request-log', { value: enabled }),
+  updateRequestLog: (enabled: boolean) =>
+    apiClient.put('/config/observability/logs/request-log', enabled),
 };

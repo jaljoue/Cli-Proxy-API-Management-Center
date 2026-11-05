@@ -14,7 +14,7 @@ export const CACHE_EXPIRY_MS = 30 * 1000; // Matches the baseline to reduce load
 
 // Network and version info
 export const DEFAULT_API_PORT = 8317;
-export const MANAGEMENT_API_PREFIX = '/v0/management';
+export const MANAGEMENT_API_PREFIX = '/v8/management';
 export const REQUEST_TIMEOUT_MS = 30 * 1000;
 export const CPA_VERSION_HEADER_KEYS = ['x-cpa-version'];
 export const CPA_BUILD_DATE_HEADER_KEYS = ['x-cpa-build-date'];

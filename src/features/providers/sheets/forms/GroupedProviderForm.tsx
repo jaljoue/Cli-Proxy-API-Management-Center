@@ -13,8 +13,8 @@ import {
 import { hasDisableAllModelsRule } from '@/components/providers/utils';
 import { maskApiKey } from '@/utils/format';
 import { MAX_CREDENTIAL_WEIGHT } from '@/utils/credentialWeight';
-import type { ModelInfo } from '@/utils/models';
-import { readThinkingLevels } from '../../thinkingLevels';
+import { removeModelAt } from '../../modelEntries';
+import { syncDiscoveredModels } from '../../discoverySelection';
 import { isGroupedPartialMutationError } from '../../groupedMutationRecovery';
 import {
   discoveryBrandForGroupedProtocol,
@@ -38,6 +38,12 @@ import { ModelDiscoveryPanel } from './ModelDiscoveryPanel';
 import { ModelEntriesEditor } from './ModelEntriesEditor';
 import { useModelDiscovery, type UseModelDiscoveryResult } from './useModelDiscovery';
 import styles from './sharedForm.module.scss';
+import { readRuntimePolicy, validateRuntimePolicy } from '../../runtimePolicy';
+import { readModelOptions, validateModelOptions } from '../../modelOptions';
+import type { ModelAlias } from '@/types';
+import { RuntimePolicyEditor } from './RuntimePolicyEditor';
+import { ProviderBehaviorEditor } from './ProviderBehaviorEditor';
+import { pickProviderBehavior } from '../../providerBehavior';
 
 interface GroupedProviderFormProps {
   brand?: GroupedProviderBrand;
@@ -85,7 +91,8 @@ const emptyGroupedKeyEntry = (
   proxyUrl: '',
   prefix: '',
   disabled: false,
-  disableCooling: false,
+  disableCooling: undefined,
+  runtimePolicy: readRuntimePolicy(),
   priority: undefined,
   weight: undefined,
   models: [emptyModel()],
@@ -98,7 +105,7 @@ const emptyGroupedForm = (definition: GroupedProviderDefinition): ProviderEntryF
   proxyUrl: '',
   prefix: '',
   disabled: false,
-  disableCooling: false,
+  disableCooling: undefined,
   priority: undefined,
   weight: undefined,
   models: [],
@@ -120,27 +127,16 @@ const protocolUrlForEntry = (
   definition: GroupedProviderDefinition
 ): string => groupedProtocolUrl(definition.getProtocolUrls(entry.baseUrl), entry.protocol);
 
-const modelsFromConfig = (
-  models:
-    | Array<{
-        name?: string;
-        alias?: string;
-        priority?: number;
-        testModel?: string;
-        image?: boolean;
-        thinking?: Record<string, unknown>;
-      }>
-    | undefined
-): ModelEntryInput[] =>
+const modelsFromConfig = (models: ModelAlias[] | undefined): ModelEntryInput[] =>
   models?.length
     ? models.map((model) => ({
+        sourceIndex: model.sourceIndex,
         name: model.name ?? '',
         alias: model.alias ?? '',
         priority: model.priority,
-        testModel: model.testModel,
         image: model.image === true,
         thinkingJson: model.thinking ? JSON.stringify(model.thinking, null, 2) : '',
-        thinkingLevels: readThinkingLevels(model.thinking),
+        ...readModelOptions(model),
       }))
     : [emptyModel()];
 
@@ -158,7 +154,9 @@ const groupedEntryFromProviderKey = (
   proxyUrl: config.proxyUrl ?? '',
   prefix: config.prefix ?? '',
   disabled: hasDisableAllModelsRule(config.excludedModels),
-  disableCooling: config.disableCooling === true,
+  disableCooling: config.disableCooling,
+  runtimePolicy: readRuntimePolicy(config),
+  ...pickProviderBehavior(config, protocol),
   priority: config.priority,
   weight: config.weight,
   models: modelsFromConfig(config.models),
@@ -176,7 +174,9 @@ const groupedEntryFromOpenAI = (
     proxyUrl: firstEntry?.proxyUrl ?? '',
     prefix: config.prefix ?? '',
     disabled: config.disabled === true,
-    disableCooling: config.disableCooling === true,
+    disableCooling: config.disableCooling,
+    runtimePolicy: readRuntimePolicy(config),
+    ...pickProviderBehavior(config, 'openaiCompatibility'),
     priority: config.priority,
     weight: firstEntry?.weight,
     models: modelsFromConfig(config.models),
@@ -197,39 +197,6 @@ const groupedKeyEntriesFromRaw = (
     return config ? [groupedEntryFromProviderKey(definition, protocol, config)] : [];
   });
   return entries.length ? entries : [emptyGroupedKeyEntry(definition)];
-};
-
-const applyDiscoveredModels = (
-  currentModels: ModelEntryInput[],
-  incoming: ModelInfo[]
-): ModelEntryInput[] => {
-  if (!incoming.length) return currentModels;
-  const seen = new Set<string>();
-  const next: ModelEntryInput[] = [];
-  currentModels.forEach((entry) => {
-    const trimmed = (entry.name ?? '').trim();
-    if (trimmed) {
-      if (seen.has(trimmed)) return;
-      seen.add(trimmed);
-    }
-    next.push(entry);
-  });
-  const placeholderIdx = next.findIndex(
-    (entry) => !(entry.name ?? '').trim() && !(entry.alias ?? '').trim()
-  );
-  if (placeholderIdx !== -1) {
-    next.splice(placeholderIdx, 1);
-  }
-  incoming.forEach((info) => {
-    const trimmed = info.name.trim();
-    if (!trimmed || seen.has(trimmed)) return;
-    seen.add(trimmed);
-    next.push({
-      name: trimmed,
-      alias: (info.alias ?? '').trim(),
-    });
-  });
-  return next.length ? next : [emptyModel()];
 };
 
 function GroupedModelSection({
@@ -283,17 +250,20 @@ function GroupedModelSection({
             hasFetched={discovery.hasFetched}
             existingNames={existingModelNames}
             mutating={mutating}
-            onApply={(picked) => onChange(applyDiscoveredModels(modelsList, picked))}
+            onApply={(picked, catalog) =>
+              onChange(syncDiscoveredModels(modelsList, picked, catalog))
+            }
             onReload={() => void discovery.fetch()}
             onClose={() => setDiscoveryOpen(false)}
           />
         ) : null}
         <ModelEntriesEditor
+          providerBrand={protocol === 'openai' ? 'openaiCompatibility' : protocol}
           models={modelsList}
           supportsImage={protocol === 'openai'}
           supportsThinking
           mutating={mutating}
-          removeDisabled={modelsList.length <= 1}
+          removeDisabled={false}
           onUpdate={(modelIndex, patch) =>
             onChange(
               modelsList.map((item, itemIndex) =>
@@ -302,10 +272,7 @@ function GroupedModelSection({
             )
           }
           onAdd={() => onChange([...modelsList, emptyModel()])}
-          onRemove={(modelIndex) => {
-            const next = modelsList.filter((_, itemIndex) => itemIndex !== modelIndex);
-            onChange(next.length ? next : [emptyModel()]);
-          }}
+          onRemove={(modelIndex) => onChange(removeModelAt(modelsList, modelIndex))}
         />
       </div>
     </Collapsible>
@@ -353,6 +320,7 @@ function GroupedKeyEntryCard({
   const discovery = useModelDiscovery({
     brand: discoveryBrandForGroupedProtocol(entry.protocol),
     baseUrl: endpointUrl,
+    proxyUrl: entry.proxyUrl,
     formHeaders: discoveryHeaders,
     apiKey: entry.apiKey,
     fallbackApiKey: entry.existingApiKey,
@@ -610,19 +578,17 @@ function GroupedKeyEntryCard({
             </span>
           </label>
 
-          <label className={styles.checkboxRow}>
-            <input
-              type="checkbox"
-              className={styles.checkboxBox}
-              checked={entry.disableCooling ?? false}
-              disabled={mutating}
-              onChange={(event) => updateEntry({ disableCooling: event.target.checked })}
-            />
-            <span className={styles.checkboxText}>
-              <span>{t('providersPage.form.disableCooling')}</span>
-              <small>{t('providersPage.form.disableCoolingHint')}</small>
-            </span>
-          </label>
+          <ProviderBehaviorEditor
+            brand={entry.protocol === 'openai' ? 'openaiCompatibility' : entry.protocol}
+            value={entry}
+            onChange={updateEntry}
+            disabled={mutating}
+          />
+          <RuntimePolicyEditor
+            value={entry.runtimePolicy ?? readRuntimePolicy()}
+            onChange={(runtimePolicy) => updateEntry({ runtimePolicy })}
+            disabled={mutating}
+          />
 
           <GroupedModelSection
             label={t(`providersPage.grouped.protocolModels.${modelKey}`)}
@@ -711,6 +677,13 @@ export function GroupedProviderForm({
   };
 
   const validateEntries = (): string | null => {
+    for (const entry of entries) {
+      const modelError = validateModelOptions(entry.models);
+      if (modelError) return t(modelError);
+      if (!entry.runtimePolicy) continue;
+      const policyError = validateRuntimePolicy(entry.runtimePolicy);
+      if (policyError) return t(policyError);
+    }
     if (!entries.length) {
       return mode === 'edit' ? null : t('providersPage.grouped.validation.keyRequired');
     }

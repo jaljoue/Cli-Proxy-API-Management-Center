@@ -2,8 +2,10 @@ import { describe, expect, test } from 'bun:test';
 import { QUOTA_PAGE_SIZE } from '@/features/quota/constants';
 import {
   buildTabCounts,
+  canRefreshQuotaAfterList,
   classifyQuotaFiles,
   filterEntriesByTab,
+  filterEntriesBySearch,
   isQuotaRefreshDisabled,
   paginate,
   resolveQuotaProviderType,
@@ -26,6 +28,17 @@ const FILES: AuthFileItem[] = [
   file('opencode-go-key-abc.json', 'opencode-go'), // Plugin-generated OpenCode Go credential.
 ];
 
+describe('refresh-all list handoff', () => {
+  test('requires a successful list from the same session as the user action', () => {
+    expect(canRefreshQuotaAfterList(1, 1, 1, false, false)).toBe(true);
+    expect(canRefreshQuotaAfterList(1, 1, 1, true, false)).toBe(false);
+    expect(canRefreshQuotaAfterList(1, 2, 2, false, false)).toBe(false);
+    expect(canRefreshQuotaAfterList(2, 2, 1, false, false)).toBe(false);
+    expect(canRefreshQuotaAfterList(1, 1, null, false, false)).toBe(false);
+    expect(canRefreshQuotaAfterList(1, 1, 1, false, true)).toBe(false);
+  });
+});
+
 describe('resolveQuotaProviderType', () => {
   test('maps provider aliases and rejects unsupported or disabled files', () => {
     expect(resolveQuotaProviderType(file('a', 'grok'))).toBe('xai');
@@ -33,6 +46,14 @@ describe('resolveQuotaProviderType', () => {
     expect(resolveQuotaProviderType(file('a', 'opencode-go'))).toBe('opencode-go');
     expect(resolveQuotaProviderType(file('a', 'gemini'))).toBeNull();
     expect(resolveQuotaProviderType(file('a', 'claude', { disabled: true }))).toBeNull();
+    expect(
+      resolveQuotaProviderType(
+        file('kiro-a.json', 'kiro', { supportsQuota: true, quotaProvider: 'kiro', authIndex: '1' })
+      )
+    ).toBe('plugin');
+    expect(resolveQuotaProviderType(file('kiro-probe.json', 'kiro', { supportsQuota: true }))).toBe(
+      'plugin'
+    );
   });
 });
 
@@ -66,6 +87,9 @@ describe('buildTabCounts', () => {
       codex: 2,
       xai: 1,
       kimi: 1,
+      devin: 0,
+      meta: 0,
+      plugin: 0,
       'opencode-go': 1,
     });
   });
@@ -84,6 +108,57 @@ describe('filterEntriesByTab', () => {
       'codex-b.json',
     ]);
     expect(filterEntriesByTab(entries, 'antigravity')).toEqual([]);
+  });
+});
+
+describe('filterEntriesBySearch', () => {
+  const entries = classifyQuotaFiles([
+    ...FILES,
+    file('personal.json', 'codex', { email: 'Alice@Example.com' }),
+    file('work.json', 'claude', { email: 'Alice@Example.com' }),
+    file('private.json', 'codex', { account: 'secret-api-key' }),
+  ]);
+
+  test('ignores case and surrounding whitespace when matching filenames or emails', () => {
+    expect(filterEntriesBySearch(entries, ' CODEX-A ').map(({ file }) => file.name)).toEqual([
+      'codex-a.json',
+    ]);
+    expect(filterEntriesBySearch(entries, ' ALICE@example ').map(({ file }) => file.name)).toEqual([
+      'work.json',
+      'personal.json',
+    ]);
+  });
+
+  test('keeps all entries for empty searches and returns none for missing accounts', () => {
+    expect(filterEntriesBySearch(entries, '')).toBe(entries);
+    expect(filterEntriesBySearch(entries, '   ')).toBe(entries);
+    expect(filterEntriesBySearch(entries, 'missing')).toEqual([]);
+    expect(filterEntriesBySearch(entries, 'secret-api-key')).toEqual([]);
+  });
+
+  test('combines with provider tabs without changing the original entries', () => {
+    const before = [...entries];
+    const matches = filterEntriesBySearch(filterEntriesByTab(entries, 'codex'), 'alice');
+    expect(matches.map(({ file }) => file.name)).toEqual(['personal.json']);
+    expect(entries).toEqual(before);
+  });
+
+  test('filters before pagination so refresh targets include matches beyond the first page', () => {
+    const all = classifyQuotaFiles(
+      Array.from({ length: QUOTA_PAGE_SIZE + 2 }, (_, index) =>
+        file(`codex-${index}.json`, 'codex', {
+          email: index >= QUOTA_PAGE_SIZE ? 'target@example.com' : 'other@example.com',
+        })
+      )
+    );
+    const filtered = filterEntriesBySearch(filterEntriesByTab(all, 'codex'), 'target@');
+    const sorted = sortQuotaEntries(filtered, 'default', () => null);
+    const { pageItems, totalPages } = paginate(sorted, 1, QUOTA_PAGE_SIZE);
+    expect(pageItems.map(({ file }) => file.name)).toEqual(['codex-20.json', 'codex-21.json']);
+    expect(totalPages).toBe(1);
+    expect(paginate(filterEntriesBySearch(all, 'missing'), 1, QUOTA_PAGE_SIZE).pageItems).toEqual(
+      []
+    );
   });
 });
 

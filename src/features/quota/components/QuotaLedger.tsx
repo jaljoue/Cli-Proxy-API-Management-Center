@@ -16,6 +16,7 @@ import { IconRefreshCw } from '@/components/ui/icons';
 import type { ResolvedTheme } from '@/types';
 import { resolveQuotaErrorMessage } from '@/utils/quota';
 import { useNow } from '@/hooks/useNow';
+import { getQuotaCacheKey } from '@/utils/quota/identity';
 import {
   getAuthFileIcon,
   getThemeSurfaceIconBackground,
@@ -231,7 +232,7 @@ export function QuotaLedger(props: QuotaLedgerProps) {
                   quota?.errorStatus,
                   quota?.error || t('common.unknown_error')
                 );
-                const displayName = displayNameFor(entry.file.name);
+                const displayName = displayNameFor(getQuotaCacheKey(entry.file));
 
                 let body: ReactNode;
                 if (status === 'idle') {

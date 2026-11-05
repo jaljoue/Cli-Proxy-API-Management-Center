@@ -14,8 +14,6 @@ export type QuotaUiState = {
   tab?: QuotaTabId;
   sortMode?: QuotaSortMode;
   view?: QuotaViewMode;
-  /** Mask emails in credential names by default in every new session. */
-  maskEmails?: boolean;
 };
 
 const QUOTA_UI_STATE_KEY = 'quotaPage.uiState';
@@ -44,7 +42,6 @@ export const readQuotaUiState = (): QuotaUiState | null => {
       tab: isQuotaTabId(parsed.tab) ? parsed.tab : undefined,
       sortMode: isQuotaSortMode(parsed.sortMode) ? parsed.sortMode : undefined,
       view: isQuotaViewMode(parsed.view) ? parsed.view : undefined,
-      maskEmails: typeof parsed.maskEmails === 'boolean' ? parsed.maskEmails : undefined,
     };
   } catch {
     return null;

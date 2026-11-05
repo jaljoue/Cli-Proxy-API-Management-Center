@@ -10,7 +10,7 @@ import {
   maskCredentialName,
   maskEmail,
   shortenCredentialName,
-} from '@/features/quota/ledger/mask';
+} from '@/utils/credentialMask';
 import { buildLedgerReset, buildLedgerRow } from '@/features/quota/ledger/rowModel';
 import { buildSummaryTile } from '@/features/quota/ledger/summaryModel';
 import { DAY_MS, HOUR_MS } from '@/utils/time/durations';
@@ -97,7 +97,16 @@ describe('buildLedgerRow', () => {
     const quota: ClaudeQuotaState = {
       status: 'success',
       planType: 'plan_max',
-      extraUsage: { is_enabled: true, monthly_limit: 5000, used_credits: 1234, utilization: 25 },
+      extraUsage: {
+        isEnabled: true,
+        monthlyLimit: 5000,
+        usedCredits: 1234,
+        utilization: 25,
+        currency: 'USD',
+        disabledReason: null,
+        userDisabled: null,
+        spendLimitReached: null,
+      },
       windows: [
         {
           id: 'five-hour',
@@ -176,7 +185,8 @@ describe('buildLedgerRow', () => {
     };
     const row = buildLedgerRow({ type: 'codex', quota, t, now: NOW, locale: 'en' });
     expect(row.planLabel).toBe('codex_quota.plan_pro');
-    expect(row.planTone).toBe('elite');
+    // Pro 200 is premium; only Pro 500 (promax) is elite.
+    expect(row.planTone).toBe('premium');
     expect(row.meters.map((m) => m.id)).toEqual(['weekly', 'five-hour']);
     expect(row.meters[0].remaining).toBe(17);
     expect(row.subline[0]).toContain('quota_management.renews_at');

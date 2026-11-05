@@ -1,6 +1,6 @@
 /**
  * Quota page with provider tabs and shared ledger/card views.
- * Load quota only on user action; cards mount idle.
+ * Existing providers load on user action; Devin queries once when first visible, without polling.
  * Preserve cacheGeneration session isolation and request-ID deduplication in
  * useQuotaBatchLoader.
  * Prune deleted credentials from provider caches when the file list changes.
@@ -15,13 +15,17 @@ import { useTranslation } from 'react-i18next';
 import { authFilesApi } from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { IconSearch, IconX } from '@/components/ui/icons';
 import { Select } from '@/components/ui/Select';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useHeaderRefresh } from '@/hooks/useHeaderRefresh';
 import { useNow } from '@/hooks/useNow';
 import { useRevealGroup } from '@/hooks/motion';
-import { useAuthStore, useQuotaStore, useThemeStore } from '@/stores';
+import { useAuthStore, useEmailMaskStore, useQuotaStore, useThemeStore } from '@/stores';
 import type { AuthFileItem, ResolvedTheme } from '@/types';
+import { getQuotaCacheFileName, getQuotaCacheKey } from '@/utils/quota/identity';
+import { credentialIdentityLabel } from '@/utils/credentialMask';
+import { normalizeRecentRequestAuthIndex } from '@/utils/recentRequests';
 import { ProviderTabs } from '@/features/authFiles/components/ProviderTabs';
 import { QuotaHeader } from './components/QuotaHeader';
 import { QuotaCard } from './components/QuotaCard';
@@ -38,8 +42,10 @@ import {
 } from './constants';
 import {
   buildTabCounts,
+  canRefreshQuotaAfterList,
   classifyQuotaFiles,
   filterEntriesByTab,
+  filterEntriesBySearch,
   paginate,
   sortQuotaEntries,
   type QuotaFileEntry,
@@ -47,10 +53,10 @@ import {
 import { nextRecoveryMs } from './resetSchedule';
 import { QUOTA_ADAPTERS, getQuotaSetter, type QuotaCardState } from './providers';
 import type { QuotaProviderType } from './providers/types';
+import { useDevinQuotaAutoLoad } from './providers/devin/useDevinQuotaAutoLoad';
 import { useQuotaActions } from './hooks/useQuotaActions';
 import { useQuotaBatchLoader } from './hooks/useQuotaBatchLoader';
 import { buildLedgerRow } from './ledger/rowModel';
-import { credentialDisplayName } from './ledger/mask';
 import { buildSummaryTile, type SummaryTile } from './ledger/summaryModel';
 import {
   QUOTA_VIEW_MODES,
@@ -62,16 +68,6 @@ import styles from './QuotaPage.module.scss';
 
 const TAB_IDS: string[] = ['all', ...QUOTA_TAB_ORDER];
 const SKELETON_CARD_COUNT = 6;
-
-/**
- * Derive credential names once for cards, ledger rows and timeline lanes.
- * Mask filename emails as `f•••@e•••.dev`, preferring exact replacement using the backend email.
- * Lead with the account email when the file name lacks it, and always shorten long hashes in
- * plugin-generated credential names.
- */
-const buildDisplayName =
-  (maskEmails: boolean, emailByName: ReadonlyMap<string, string>) => (name: string) =>
-    credentialDisplayName(name, emailByName.get(name), maskEmails);
 
 export function QuotaPage() {
   const { t, i18n } = useTranslation();
@@ -87,10 +83,10 @@ export function QuotaPage() {
   );
   const [page, setPage] = useState(1);
   const [view, setView] = useState<QuotaViewMode>(() => readQuotaUiState()?.view ?? 'ledger');
-  // Mask emails by default in each new session; showing them requires an explicit action.
-  const [maskEmails, setMaskEmails] = useState<boolean>(
-    () => readQuotaUiState()?.maskEmails ?? true
-  );
+  const maskEmails = useEmailMaskStore((state) => state.maskEmails);
+  const toggleMaskEmails = useEmailMaskStore((state) => state.toggleMaskEmails);
+  const [search, setSearch] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
   // Stagger title, metadata, actions and tabs at 70ms intervals.
   const revealRef = useRevealGroup<HTMLDivElement>();
 
@@ -98,24 +94,43 @@ export function QuotaPage() {
 
   /* File list. */
 
+  const sessionGeneration = useQuotaStore((state) => state.cacheGeneration);
+  const [filesGeneration, setFilesGeneration] = useState<number | null>(null);
+  const listRequestRef = useRef(0);
   const loadFiles = useCallback(async () => {
+    const requestId = ++listRequestRef.current;
+    if (connectionStatus !== 'connected') {
+      setFiles([]);
+      setFilesGeneration(null);
+      setLoading(false);
+      return;
+    }
+    const isCurrent = () =>
+      requestId === listRequestRef.current &&
+      sessionGeneration === useQuotaStore.getState().cacheGeneration;
     setLoading(true);
     setError('');
     try {
       const data = await authFilesApi.list();
+      if (!isCurrent()) return;
       setFiles(data?.files || []);
+      setFilesGeneration(sessionGeneration);
     } catch (err: unknown) {
+      if (!isCurrent()) return;
       const message = err instanceof Error ? err.message : t('notification.refresh_failed');
       setError(message);
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
-  }, [t]);
+  }, [connectionStatus, sessionGeneration, t]);
 
   useHeaderRefresh(loadFiles);
 
   useEffect(() => {
     void loadFiles();
+    return () => {
+      listRequestRef.current += 1;
+    };
   }, [loadFiles]);
 
   /*
@@ -126,7 +141,10 @@ export function QuotaPage() {
   const antigravityQuota = useQuotaStore((state) => state.antigravityQuota);
   const claudeQuota = useQuotaStore((state) => state.claudeQuota);
   const codexQuota = useQuotaStore((state) => state.codexQuota);
+  const devinQuota = useQuotaStore((state) => state.devinQuota);
   const kimiQuota = useQuotaStore((state) => state.kimiQuota);
+  const metaQuota = useQuotaStore((state) => state.metaQuota);
+  const pluginQuota = useQuotaStore((state) => state.pluginQuota);
   const xaiQuota = useQuotaStore((state) => state.xaiQuota);
   const opencodeGoQuota = useQuotaStore((state) => state.opencodeGoQuota);
 
@@ -136,32 +154,49 @@ export function QuotaPage() {
         antigravity: antigravityQuota,
         claude: claudeQuota,
         codex: codexQuota,
+        devin: devinQuota,
         kimi: kimiQuota,
+        meta: metaQuota,
+        plugin: pluginQuota,
         xai: xaiQuota,
         'opencode-go': opencodeGoQuota,
       }) as unknown as Record<QuotaProviderType, Record<string, QuotaCardState>>,
-    [antigravityQuota, claudeQuota, codexQuota, kimiQuota, xaiQuota, opencodeGoQuota]
+    [
+      antigravityQuota,
+      claudeQuota,
+      codexQuota,
+      devinQuota,
+      kimiQuota,
+      metaQuota,
+      pluginQuota,
+      xaiQuota,
+      opencodeGoQuota,
+    ]
   );
 
-  const emailByName = useMemo(() => {
-    const map = new Map<string, string>();
-    files.forEach((file) => {
-      if (typeof file.email === 'string' && file.email.trim()) map.set(file.name, file.email);
-    });
-    // The plugin saves the OpenCode Go email during a refresh, so it can arrive here before the
-    // file list is reloaded.
-    Object.entries(opencodeGoQuota).forEach(([name, quota]) => {
-      if (!map.has(name) && quota.email) map.set(name, quota.email);
-    });
-    return map;
-  }, [files, opencodeGoQuota]);
-  const displayNameFor = useMemo(
-    () => buildDisplayName(maskEmails, emailByName),
-    [maskEmails, emailByName]
-  );
+  const displayNameFor = useMemo(() => {
+    const fileByKey = new Map<string, AuthFileItem>();
+    files.forEach((file) => fileByKey.set(getQuotaCacheKey(file), file));
+    return (key: string) => {
+      const file = fileByKey.get(key);
+      const name = file?.name ?? getQuotaCacheFileName(key);
+      const fileEmail = typeof file?.email === 'string' ? file.email.trim() : '';
+      // The plugin saves the OpenCode Go email during a refresh, so it can arrive here before
+      // the file list is reloaded.
+      const email = fileEmail || opencodeGoQuota[name]?.email || null;
+      const multiIdentity = key !== name;
+      return credentialIdentityLabel({
+        name,
+        email,
+        authIndex: multiIdentity && file ? normalizeRecentRequestAuthIndex(file.authIndex) : null,
+        maskEmails,
+      });
+    };
+  }, [files, maskEmails, opencodeGoQuota]);
 
   const getQuota = useCallback(
-    (entry: QuotaFileEntry): QuotaCardState | undefined => quotaByType[entry.type][entry.file.name],
+    (entry: QuotaFileEntry): QuotaCardState | undefined =>
+      quotaByType[entry.type][getQuotaCacheKey(entry.file)],
     [quotaByType]
   );
 
@@ -175,7 +210,14 @@ export function QuotaPage() {
 
   const entries = useMemo(() => classifyQuotaFiles(files), [files]);
   const tabCounts = useMemo(() => buildTabCounts(entries), [entries]);
-  const filteredEntries = useMemo(() => filterEntriesByTab(entries, tab), [entries, tab]);
+  const filteredEntries = useMemo(
+    () => filterEntriesBySearch(filterEntriesByTab(entries, tab), search),
+    [entries, tab, search]
+  );
+  const handleSearchChange = useCallback((value: string) => {
+    setSearch(value);
+    setPage(1);
+  }, []);
 
   const resolveNextRecovery = useCallback(
     (entry: QuotaFileEntry) => nextRecoveryMs(entry.type, getQuota(entry), sortNow),
@@ -209,13 +251,6 @@ export function QuotaPage() {
     writeQuotaUiState({ view: next as QuotaViewMode });
   }, []);
 
-  const handleToggleMaskEmails = useCallback(() => {
-    setMaskEmails((current) => {
-      writeQuotaUiState({ maskEmails: !current });
-      return !current;
-    });
-  }, []);
-
   const sortOptions = useMemo(
     () =>
       QUOTA_SORT_MODES.map((mode) => ({ value: mode, label: t(`quota_management.sort_${mode}`) })),
@@ -232,7 +267,7 @@ export function QuotaPage() {
     let loaded = 0;
     let attention = 0;
     entries.forEach((entry) => {
-      const status = quotaByType[entry.type][entry.file.name]?.status;
+      const status = quotaByType[entry.type][getQuotaCacheKey(entry.file)]?.status;
       if (status === 'success') loaded += 1;
       else if (status === 'error') attention += 1;
     });
@@ -259,7 +294,7 @@ export function QuotaPage() {
         rows: (byType.get(type) ?? []).map((entry) => {
           const quota = getQuota(entry);
           return {
-            name: entry.file.name,
+            name: getQuotaCacheKey(entry.file),
             loaded: quota?.status === 'success',
             row: buildLedgerRow({
               type,
@@ -276,11 +311,11 @@ export function QuotaPage() {
 
   // After the file list settles, prune each provider cache to credentials that still exist.
   useEffect(() => {
-    if (loading) return;
+    if (loading || error || filesGeneration !== sessionGeneration) return;
     const survivorsByType = new Map<QuotaProviderType, Set<string>>(
       QUOTA_TAB_ORDER.map((type) => [type, new Set<string>()])
     );
-    entries.forEach((entry) => survivorsByType.get(entry.type)?.add(entry.file.name));
+    entries.forEach((entry) => survivorsByType.get(entry.type)?.add(getQuotaCacheKey(entry.file)));
 
     QUOTA_TAB_ORDER.forEach((type) => {
       const survivors = survivorsByType.get(type) ?? new Set<string>();
@@ -293,36 +328,61 @@ export function QuotaPage() {
         return next;
       });
     });
-  }, [entries, loading]);
+  }, [entries, error, filesGeneration, loading, sessionGeneration]);
 
   /* Loading and actions. */
 
   const { batchLoading, loadQuota } = useQuotaBatchLoader();
   const { resettingQuotaName, refreshQuota, resetQuota } = useQuotaActions(disableControls);
 
-  const pendingRefreshRef = useRef(false);
+  const pendingRefreshRef = useRef<number | null>(null);
   const prevLoadingRef = useRef(loading);
 
   // Refresh all reloads the file list first, then fetches the current page's quota when loading
   // finishes.
   const handleRefreshAll = useCallback(() => {
     if (disableControls) return;
-    pendingRefreshRef.current = true;
+    pendingRefreshRef.current = sessionGeneration;
     void loadFiles();
-  }, [disableControls, loadFiles]);
+  }, [disableControls, loadFiles, sessionGeneration]);
 
   useEffect(() => {
     const wasLoading = prevLoadingRef.current;
     prevLoadingRef.current = loading;
 
-    if (!pendingRefreshRef.current) return;
+    const requestedSession = pendingRefreshRef.current;
+    if (requestedSession === null) return;
+    if (requestedSession !== sessionGeneration) {
+      pendingRefreshRef.current = null;
+      return;
+    }
     if (loading || !wasLoading) return;
 
-    pendingRefreshRef.current = false;
-    void loadQuota(pageItems);
-  }, [loading, loadQuota, pageItems]);
+    pendingRefreshRef.current = null;
+    if (
+      canRefreshQuotaAfterList(
+        requestedSession,
+        sessionGeneration,
+        filesGeneration,
+        Boolean(error),
+        disableControls
+      )
+    ) {
+      void loadQuota(pageItems);
+    }
+  }, [disableControls, error, filesGeneration, loading, loadQuota, pageItems, sessionGeneration]);
 
-  const canUseActions = !disableControls && !loading;
+  useDevinQuotaAutoLoad(
+    pageItems,
+    disableControls ||
+      loading ||
+      batchLoading ||
+      Boolean(error) ||
+      filesGeneration !== sessionGeneration,
+    loadQuota
+  );
+
+  const canUseActions = !disableControls && !loading && filesGeneration === sessionGeneration;
 
   /*
    * Animate only the first card batch. QuotaCard captures its delay in useState at mount.
@@ -356,7 +416,7 @@ export function QuotaPage() {
         refreshing={loading || batchLoading}
         disableControls={disableControls}
         maskEmails={maskEmails}
-        onToggleMaskEmails={handleToggleMaskEmails}
+        onToggleMaskEmails={toggleMaskEmails}
         onRefreshAll={handleRefreshAll}
       />
 
@@ -371,10 +431,7 @@ export function QuotaPage() {
           />
         )}
 
-        {/*
-         * Reveal tabs and sorting together. useRevealGroup staggers each data-reveal descendant, so keep
-         * sorting inside the same node.
-         */}
+        {/* Provider navigation and the search toolbar sit on separate rows. */}
         <div className={styles.tabsRow} data-reveal>
           <ProviderTabs
             types={TAB_IDS}
@@ -383,6 +440,35 @@ export function QuotaPage() {
             resolvedTheme={resolvedTheme}
             onChange={handleTabChange}
           />
+        </div>
+
+        <div className={styles.toolbar}>
+          <div className={styles.search}>
+            <IconSearch size={16} className={styles.searchIcon} aria-hidden="true" />
+            <input
+              ref={searchInputRef}
+              className={styles.searchInput}
+              type="search"
+              value={search}
+              onChange={(event) => handleSearchChange(event.target.value)}
+              placeholder={t('quota_management.search_placeholder')}
+              aria-label={t('quota_management.search_label')}
+            />
+            {search && (
+              <button
+                type="button"
+                className={styles.clearSearch}
+                aria-label={t('quota_management.search_clear')}
+                title={t('quota_management.search_clear')}
+                onClick={() => {
+                  handleSearchChange('');
+                  searchInputRef.current?.focus();
+                }}
+              >
+                <IconX size={14} aria-hidden="true" />
+              </button>
+            )}
+          </div>
           <div className={styles.controls}>
             <div className={styles.sort}>
               <Select
@@ -420,17 +506,25 @@ export function QuotaPage() {
         ) : isEmpty ? (
           <EmptyState
             title={
-              tab === 'all'
-                ? t('quota_management.empty_title')
-                : t(`${QUOTA_ADAPTERS[tab].i18nPrefix}.empty_title`)
+              search.trim()
+                ? t('quota_management.search_empty_title')
+                : tab === 'all'
+                  ? t('quota_management.empty_title')
+                  : t(`${QUOTA_ADAPTERS[tab].i18nPrefix}.empty_title`)
             }
             description={
-              tab === 'all'
-                ? t('quota_management.empty_desc')
-                : t(`${QUOTA_ADAPTERS[tab].i18nPrefix}.empty_desc`)
+              search.trim()
+                ? t('quota_management.search_empty_desc')
+                : tab === 'all'
+                  ? t('quota_management.empty_desc')
+                  : t(`${QUOTA_ADAPTERS[tab].i18nPrefix}.empty_desc`)
             }
             action={
-              tab === 'all' ? undefined : (
+              search.trim() ? (
+                <Button variant="secondary" size="sm" onClick={() => handleSearchChange('')}>
+                  {t('quota_management.search_clear')}
+                </Button>
+              ) : tab === 'all' ? undefined : (
                 <Button variant="secondary" size="sm" onClick={() => handleTabChange('all')}>
                   {t('auth_files.filter_all')}
                 </Button>
@@ -455,13 +549,13 @@ export function QuotaPage() {
           <div className={styles.grid}>
             {pageItems.map((entry, index) => (
               <QuotaCard
-                key={`${entry.type}:${entry.file.name}`}
+                key={`${entry.type}:${getQuotaCacheKey(entry.file)}`}
                 entry={entry}
                 quota={getQuota(entry)}
-                displayName={displayNameFor(entry.file.name)}
+                displayName={displayNameFor(getQuotaCacheKey(entry.file))}
                 resolvedTheme={resolvedTheme}
                 canRefresh={canUseActions && !entry.file.disabled}
-                resetting={resettingQuotaName === entry.file.name}
+                resetting={resettingQuotaName === getQuotaCacheKey(entry.file)}
                 entranceDelayMs={cardEntranceDelay(index)}
                 onRefresh={() => void refreshQuota(entry.file, QUOTA_ADAPTERS[entry.type])}
                 onReset={() => resetQuota(entry.file, QUOTA_ADAPTERS[entry.type])}

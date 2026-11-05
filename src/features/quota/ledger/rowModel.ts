@@ -19,13 +19,15 @@ import type {
   AntigravityQuotaState,
   ClaudeQuotaState,
   CodexQuotaState,
+  DevinQuotaState,
   KimiQuotaState,
+  MetaQuotaState,
   OpencodeGoQuotaState,
+  PluginQuotaMetric,
+  PluginQuotaState,
   XaiQuotaState,
 } from '@/types';
-import {
-  formatDateTimeValue as formatFallbackDateTime,
-} from '@/utils/format';
+import { formatDateTimeValue as formatFallbackDateTime } from '@/utils/format';
 import {
   formatInstantShort,
   formatKimiResetHint,
@@ -213,11 +215,11 @@ function buildClaudeRow(quota: ClaudeQuotaState, input: LedgerRowInput): LedgerR
   const meters = metersFromWindows(quota.windows ?? [], t, now, locale, urgentId);
   const facts: LedgerFact[] = [];
   const extra = quota.extraUsage;
-  if (extra && extra.is_enabled) {
+  if (extra && extra.isEnabled && extra.usedCredits !== null && extra.monthlyLimit !== null) {
     facts.push({
       id: 'extra-usage',
       label: t('claude_quota.extra_usage_label'),
-      value: `$${(extra.used_credits / 100).toFixed(2)} / $${(extra.monthly_limit / 100).toFixed(2)}`,
+      value: `$${(extra.usedCredits / 100).toFixed(2)} / $${(extra.monthlyLimit / 100).toFixed(2)}`,
       lines: [],
     });
   }
@@ -258,7 +260,11 @@ function buildCodexRow(quota: CodexQuotaState, input: LedgerRowInput): LedgerRow
         now,
         locale
       );
-      return [t('codex_quota.reset_credit_number', { index: index + 1 }), reset?.relative, reset?.absolute]
+      return [
+        t('codex_quota.reset_credit_number', { index: index + 1 }),
+        reset?.relative,
+        reset?.absolute,
+      ]
         .filter((part): part is string => Boolean(part))
         .join(' · ');
     });
@@ -322,6 +328,9 @@ function buildKimiRow(quota: KimiQuotaState, input: LedgerRowInput): LedgerRow {
     message: meters.length === 0 ? t('kimi_quota.empty_data') : null,
   };
 }
+
+const xaiPlanTone = (tier: 'elite' | 'premium' | 'standard' | undefined): LedgerTone =>
+  tier === 'elite' ? 'elite' : tier === 'premium' ? 'premium' : 'plain';
 
 function buildXaiRow(quota: XaiQuotaState, input: LedgerRowInput): LedgerRow {
   const { t, now, locale } = input;
@@ -431,8 +440,14 @@ function buildXaiRow(quota: XaiQuotaState, input: LedgerRowInput): LedgerRow {
 
   return {
     ...EMPTY_ROW,
-    planLabel: plan ? t(`xai_quota.${plan.labelKey}`) : null,
-    planTone: plan?.premium ? 'premium' : 'plain',
+    // Prefer the subscription endpoint's plan (Grok subscription); fall back to the
+    // monthly-cap heuristic when it is unavailable.
+    planLabel: billing.planLabel || (plan ? t(`xai_quota.${plan.labelKey}`) : null),
+    planTone: billing.planLabel
+      ? xaiPlanTone(billing.planTier)
+      : plan?.premium
+        ? 'premium'
+        : 'plain',
     meters,
     facts,
   };
@@ -448,12 +463,14 @@ function buildAntigravityRow(quota: AntigravityQuotaState, input: LedgerRowInput
   const meters: LedgerMeter[] = groups.flatMap((group) => {
     const groupLabel = translateAntigravityGroupLabel(group.label, t);
     return group.buckets.map((bucket): LedgerMeter => {
-      const bucketLabel = translateAntigravityBucketLabel(bucket.label, t);
+      const bucketLabel = translateAntigravityBucketLabel(bucket.label, t, bucket.window);
       const resetAtMs = usableMs(bucket.resetAtMs);
       return {
         id: bucket.id,
         label: groups.length > 1 ? `${groupLabel} · ${bucketLabel}` : bucketLabel,
-        remaining: clampPercent(Math.round(Math.max(0, Math.min(1, bucket.remainingFraction)) * 100)),
+        remaining: clampPercent(
+          Math.round(Math.max(0, Math.min(1, bucket.remainingFraction)) * 100)
+        ),
         reset: buildLedgerReset(
           formatQuotaResetTime(bucket.resetTime),
           resetAtMs,
@@ -490,6 +507,121 @@ function buildOpencodeGoRow(quota: OpencodeGoQuotaState, input: LedgerRowInput):
   };
 }
 
+function buildMetaRow(quota: MetaQuotaState, input: LedgerRowInput): LedgerRow {
+  const { t, now, locale } = input;
+  const data = quota.data;
+  if (!data) return { ...EMPTY_ROW, message: t('meta_quota.empty_data') };
+  const urgentId = pickUrgentRowId(collectQuotaRowInstants('meta', quota), now);
+  const meters = data.windows.map((window): LedgerMeter => {
+    const resetAtMs = window.resetAt === undefined ? null : usableMs(window.resetAt * 1000);
+    const label =
+      window.id === 'window' && window.durationMinutes
+        ? window.durationMinutes % 60 === 0
+          ? t('meta_quota.window_duration_hours', { hours: window.durationMinutes / 60 })
+          : t('meta_quota.window_duration', { minutes: window.durationMinutes })
+        : t(`meta_quota.${window.id}`);
+    return {
+      id: window.id,
+      label,
+      remaining: remainingFromUsed(window.usedPercent),
+      reset: buildLedgerReset(null, resetAtMs, now, locale, window.id === urgentId),
+      resetAtMs,
+      periodHours:
+        window.id === 'weekly'
+          ? 24 * 7
+          : window.durationMinutes
+            ? window.durationMinutes / 60
+            : null,
+      primary: false,
+    };
+  });
+  const hasData = meters.some((meter) => meter.remaining !== null);
+  return {
+    ...EMPTY_ROW,
+    planLabel: usableLabel(data.planName),
+    meters: promotePrimary(meters, firstIdOf(meters, ['weekly'])),
+    message: hasData ? null : t('meta_quota.empty_data'),
+  };
+}
+
+function buildDevinRow(quota: DevinQuotaState, input: LedgerRowInput): LedgerRow {
+  const { t, now, locale } = input;
+  const urgentId = pickUrgentRowId(collectQuotaRowInstants('devin', quota), now);
+  const meters = (quota.windows ?? []).map((window): LedgerMeter => {
+    const resetAtMs = usableMs(window.resetAtMs);
+    return {
+      id: window.id,
+      label: t(`devin_quota.${window.id}`),
+      remaining: window.remainingPercent === null ? null : clampPercent(window.remainingPercent),
+      reset: buildLedgerReset(null, resetAtMs, now, locale, window.id === urgentId),
+      resetAtMs,
+      periodHours: usableMs(window.periodHours),
+      primary: false,
+    };
+  });
+  const planEnd = buildLedgerReset(null, quota.planEndMs, now, locale);
+  return {
+    ...EMPTY_ROW,
+    planLabel: usableLabel(quota.plan),
+    subline: planEnd
+      ? [
+          `${t('devin_quota.plan_end')} ${[planEnd.absolute, planEnd.relative]
+            .filter(Boolean)
+            .join(' · ')}`,
+        ]
+      : [],
+    meters: promotePrimary(meters, firstIdOf(meters, ['weekly'])),
+    message: meters.length === 0 ? t('devin_quota.unavailable') : null,
+  };
+}
+
+const formatPluginMetric = (metric: PluginQuotaMetric): string => {
+  const value =
+    metric.format === 'currency' && metric.currency
+      ? new Intl.NumberFormat(undefined, { style: 'currency', currency: metric.currency }).format(
+          metric.value
+        )
+      : new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(metric.value);
+  return metric.unit ? `${value} ${metric.unit}` : value;
+};
+
+function buildPluginRow(quota: PluginQuotaState, input: LedgerRowInput): LedgerRow {
+  const { t, now, locale } = input;
+  const groups = quota.groups ?? [];
+  // Plugin groups and buckets are labelled by the plugin itself; no translation tables apply.
+  const meters: LedgerMeter[] = groups.flatMap((group) =>
+    group.buckets.map((bucket): LedgerMeter => {
+      const resetAtMs = usableMs(bucket.resetAtMs) ?? parseIsoToMs(bucket.resetTime);
+      return {
+        id: bucket.id,
+        label: groups.length > 1 ? `${group.label} · ${bucket.label}` : bucket.label,
+        remaining: clampPercent(
+          Math.round(Math.max(0, Math.min(1, bucket.remainingFraction)) * 100)
+        ),
+        reset: buildLedgerReset(null, resetAtMs, now, locale),
+        resetAtMs,
+        periodHours: usableMs(bucket.periodHours),
+        primary: false,
+      };
+    })
+  );
+  const summary = quota.summary ?? [];
+  const plan =
+    quota.subscription?.tierName || quota.subscription?.plan || quota.subscription?.tierId || null;
+  return {
+    ...EMPTY_ROW,
+    planLabel: usableLabel(plan),
+    meters: promotePrimary(meters, meters[0]?.id ?? null),
+    facts: summary.map((metric) => ({
+      id: `metric-${metric.key}`,
+      label: metric.label,
+      value: formatPluginMetric(metric),
+      lines: [],
+    })),
+    message: meters.length === 0 && summary.length === 0 ? t('plugin_quota.empty_data') : null,
+  };
+}
+
 /**
  * Project one credential's loaded quota into a ledger row.
  *
@@ -512,6 +644,12 @@ export function buildLedgerRow(input: LedgerRowInput): LedgerRow {
       return buildAntigravityRow(quota as AntigravityQuotaState, input);
     case 'opencode-go':
       return buildOpencodeGoRow(quota as OpencodeGoQuotaState, input);
+    case 'meta':
+      return buildMetaRow(quota as MetaQuotaState, input);
+    case 'devin':
+      return buildDevinRow(quota as unknown as DevinQuotaState, input);
+    case 'plugin':
+      return buildPluginRow(quota as unknown as PluginQuotaState, input);
     default:
       return EMPTY_ROW;
   }

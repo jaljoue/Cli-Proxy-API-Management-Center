@@ -1,28 +1,32 @@
 import { normalizePlanType } from './parsers';
 
 /**
- * Pure mapping from Codex plan tier -> badge style.
+ * Codex 套餐档位的纯映射（卡面档位见 features/quota/cardTier.ts）。
  *
- * - elite   -> liquid platinum badge (Pro 20x, plan=pro)
- * - premium -> gold badge (Pro Lite; Antigravity ultra / xAI paid reuse the gold class too)
- * - plain   -> plain text badge (plus/team/free/unknown)
+ * - elite   → Pro 500（plan=promax）
+ * - premium → Pro 200（plan=pro）、Pro 100（plan=prolite）
+ * - plain   → Plus / Team / Business（含 Business Premium）/ Free / 未知
  */
 export type CodexPlanTier = 'elite' | 'premium' | 'plain';
 
-export const PREMIUM_CODEX_PLAN_TYPES = new Set(['pro', 'prolite', 'pro-lite', 'pro_lite']);
+/** Pro 500 的各种写法。 */
+export const PRO_MAX_CODEX_PLAN_TYPES = new Set(['promax', 'pro-max', 'pro_max']);
 
-// Pro 20x (plan=pro) sits one tier above gold premium: the liquid platinum badge,
-// see .elitePlanValue in QuotaPage.module.scss.
-export const ELITE_CODEX_PLAN_TYPE = 'pro';
+/** Pro 100 的各种写法。 */
+export const PRO_LITE_CODEX_PLAN_TYPES = new Set(['prolite', 'pro-lite', 'pro_lite']);
 
-/**
- * Order-sensitive: 'pro' also matches PREMIUM_CODEX_PLAN_TYPES, so the elite check must come first,
- * or Pro 20x silently falls back to gold. The contract is guarded by tests/quotaPlanTier.test.ts.
- */
+/** Pro 200。 */
+export const PRO_CODEX_PLAN_TYPE = 'pro';
+
+/** Business Premium：名字带 Premium，但档位与 Plus 相同。 */
+export const BUSINESS_PREMIUM_CODEX_PLAN_TYPE = 'self_serve_business_prolite';
+
 export function resolvePlanTier(planType: string | null | undefined): CodexPlanTier {
   const normalized = normalizePlanType(planType);
   if (!normalized) return 'plain';
-  if (normalized === ELITE_CODEX_PLAN_TYPE) return 'elite';
-  if (PREMIUM_CODEX_PLAN_TYPES.has(normalized)) return 'premium';
+  if (PRO_MAX_CODEX_PLAN_TYPES.has(normalized)) return 'elite';
+  if (normalized === PRO_CODEX_PLAN_TYPE || PRO_LITE_CODEX_PLAN_TYPES.has(normalized)) {
+    return 'premium';
+  }
   return 'plain';
 }

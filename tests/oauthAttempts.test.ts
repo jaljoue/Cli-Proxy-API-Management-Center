@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { createOAuthAttempts } from '../src/pages/oauthAttempts';
+import { createOAuthAttempts } from '@/features/oauth/oauthAttempts';
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -122,6 +122,7 @@ describe('OAuth attempt lifecycle', () => {
     response.resolve('ok');
     await flush();
     expect(old.isCurrent()).toBe(false);
+    expect(old.signal.aborted).toBe(true);
     expect(tasks.size).toBe(0);
     expect(effects).toBe(0);
     expect(attempts.begin('codex').isCurrent()).toBe(true);
@@ -141,6 +142,131 @@ describe('OAuth attempt lifecycle', () => {
     tick();
     expect(resets).toBe(1);
     expect(next.isCurrent()).toBe(true);
+  });
+
+  test('Devin cancellation invalidates an in-flight poll and callback before DELETE settles', async () => {
+    const { attempts, tasks, tick } = setup();
+    const response = deferred<string>();
+    const callback = deferred<void>();
+    let effects = 0;
+    const login = attempts.begin('devin');
+    login.poll(
+      () => response.promise,
+      () => {
+        effects++;
+        return true;
+      },
+      () => effects++,
+      3000
+    );
+    const submission = callback.promise.then(() => {
+      if (login.isCurrent()) effects++;
+    });
+    tick();
+    const cancellation = attempts.begin('devin');
+    response.resolve('ok');
+    callback.resolve();
+    await submission;
+    await flush();
+    expect(effects).toBe(0);
+    expect(tasks.size).toBe(0);
+    expect(cancellation.isCurrent()).toBe(true);
+    expect(login.signal.aborted).toBe(true);
+    expect(cancellation.signal.aborted).toBe(false);
+
+    // A connection switch or a later login also makes an outstanding DELETE inert.
+    attempts.invalidateAll();
+    const next = attempts.begin('devin');
+    expect(cancellation.isCurrent()).toBe(false);
+    expect(cancellation.signal.aborted).toBe(true);
+    cancellation.invalidate();
+    expect(next.isCurrent()).toBe(true);
+    expect(next.signal.aborted).toBe(false);
+  });
+
+  test('Devin terminal status stops polling without disturbing another provider', async () => {
+    for (const status of ['ok', 'error']) {
+      const { attempts, tasks, tick } = setup();
+      const other = attempts.begin('codex');
+      other.schedule(() => {}, 3000);
+      const devin = attempts.begin('devin');
+      const results: string[] = [];
+      devin.poll(
+        async () => status,
+        (result) => {
+          results.push(result);
+          devin.invalidate();
+          return false;
+        },
+        () => {},
+        3000
+      );
+      tick();
+      await flush();
+      expect(results).toEqual([status]);
+      expect(tasks.size).toBe(0);
+      expect(other.isCurrent()).toBe(true);
+      expect(devin.isCurrent()).toBe(false);
+    }
+  });
+
+  test('a failed status request ends polling and the same attempt can resume it', async () => {
+    const { attempts, tasks, tick } = setup();
+    const responses: Array<() => Promise<string>> = [
+      async () => {
+        throw new Error('Request failed with status code 502');
+      },
+      async () => 'wait',
+      async () => 'ok',
+    ];
+    const results: string[] = [];
+    let errors = 0;
+    const attempt = attempts.begin('codex');
+    const poll = () =>
+      attempt.poll(
+        () => responses.shift()!(),
+        (result) => {
+          results.push(result);
+          return result === 'wait';
+        },
+        () => errors++,
+        3000
+      );
+    expect(attempt.isPolling()).toBe(false);
+    poll();
+    expect(attempt.isPolling()).toBe(true);
+    tick();
+    await flush();
+    expect(errors).toBe(1);
+    expect(attempt.isPolling()).toBe(false);
+    expect(tasks.size).toBe(0);
+
+    // An accepted callback resumes polling on the attempt that still owns the login.
+    poll();
+    expect(attempt.isPolling()).toBe(true);
+    tick();
+    await flush();
+    expect(attempt.isPolling()).toBe(true);
+    tick();
+    await flush();
+    expect(results).toEqual(['wait', 'ok']);
+    expect(attempt.isPolling()).toBe(false);
+    expect(tasks.size).toBe(0);
+  });
+
+  test('an invalidated attempt never reports an active poll', () => {
+    const { attempts } = setup();
+    const old = attempts.begin('codex');
+    old.poll(
+      async () => 'wait',
+      () => true,
+      () => {},
+      3000
+    );
+    expect(old.isPolling()).toBe(true);
+    const next = attempts.begin('codex');
+    expect(old.isPolling()).toBe(false);
+    expect(next.isPolling()).toBe(false);
   });
 
   test('terminal results and request errors do not schedule another poll', async () => {

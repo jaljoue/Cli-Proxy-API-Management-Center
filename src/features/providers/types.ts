@@ -4,11 +4,15 @@
 
 import type { GeminiKeyConfig, OpenAIProviderConfig, ProviderKeyConfig } from '@/types';
 import type { ThinkingLevel } from './thinkingLevels';
+import type { RuntimePolicyDraft } from './runtimePolicy';
+import type { ModelOptionsInput } from './modelOptions';
+import type { ProviderBehaviorOptions } from '@/types/provider';
 
 export type ProviderBrand =
   | 'gemini'
   | 'interactions'
   | 'codex'
+  | 'meta'
   | 'xai'
   | 'claude'
   | 'vertex'
@@ -28,6 +32,7 @@ export type ProviderResourceSelector =
   | { brand: 'gemini'; apiKey: string; baseUrl?: string; index: number }
   | { brand: 'interactions'; apiKey: string; baseUrl?: string; index: number }
   | { brand: 'codex'; apiKey: string; baseUrl?: string; index: number }
+  | { brand: 'meta'; apiKey: string; baseUrl?: string; index: number }
   | { brand: 'xai'; apiKey: string; baseUrl?: string; index: number }
   | { brand: 'claude'; apiKey: string; baseUrl?: string; index: number }
   | { brand: 'vertex'; apiKey: string; baseUrl?: string; index: number }
@@ -105,11 +110,13 @@ export interface GroupedProviderRaw {
  * Shared sheet form values.
  * Gemini/Codex/Claude/Vertex/OpenAI share the base fields and enable their own advanced sections.
  */
-export interface ModelEntryInput {
+export interface ModelEntryInput extends ModelOptionsInput {
+  /** Only used by the OAuth alias editor. */
+  fork?: boolean;
+  sourceIndex?: number | null;
   name: string;
   alias?: string;
   priority?: number;
-  testModel?: string;
   image?: boolean;
   /** Original backend value, preserved until the standard-level selector is changed. */
   thinkingJson?: string;
@@ -119,7 +126,7 @@ export interface ModelEntryInput {
 
 export type GroupedProtocol = 'openai' | 'codex' | 'claude' | 'gemini';
 
-export interface GroupedKeyEntryInput {
+export interface GroupedKeyEntryInput extends ProviderBehaviorOptions {
   protocol: GroupedProtocol;
   apiKey: string;
   existingApiKey?: string;
@@ -128,12 +135,14 @@ export interface GroupedKeyEntryInput {
   prefix: string;
   disabled: boolean;
   disableCooling?: boolean;
+  runtimePolicy?: RuntimePolicyDraft;
   priority?: number;
   weight?: number;
   models: ModelEntryInput[];
 }
 
 export interface ApiKeyEntryInput {
+  sourceIndex?: number;
   apiKey: string;
   existingApiKey?: string;
   proxyUrl: string;
@@ -148,7 +157,7 @@ export interface CloakInput {
   cacheUserId: boolean;
 }
 
-export interface ProviderEntryFormInput {
+export interface ProviderEntryFormInput extends ProviderBehaviorOptions {
   /** On OpenAI create, passed only via apiKeyEntries */
   apiKey: string;
   /** Required for OpenAI; not shown for other brands */
@@ -158,6 +167,7 @@ export interface ProviderEntryFormInput {
   prefix: string;
   disabled: boolean;
   disableCooling?: boolean;
+  runtimePolicy?: RuntimePolicyDraft;
   priority?: number;
   weight?: number;
 
@@ -171,7 +181,7 @@ export interface ProviderEntryFormInput {
   /** Claude only */
   cloak?: CloakInput;
   fingerprintProfile?: string;
-  /** OpenAI persists this; Gemini/Claude use it for one-off connectivity tests. */
+  /** Temporary selection for connectivity tests only; never persisted in backend config. */
   testModel?: string;
   apiKeyEntries?: ApiKeyEntryInput[];
   /** Grouped brands store one key per platform protocol. */

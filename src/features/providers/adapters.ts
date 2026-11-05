@@ -41,7 +41,7 @@ const truncateForId = (value: string | undefined | null): string => {
 };
 
 function providerKeyToResource(
-  brand: 'gemini' | 'interactions' | 'codex' | 'xai' | 'claude' | 'vertex',
+  brand: 'gemini' | 'interactions' | 'codex' | 'meta' | 'xai' | 'claude' | 'vertex',
   config: GeminiKeyConfig | ProviderKeyConfig,
   index: number
 ): ProviderResource {
@@ -68,7 +68,7 @@ function providerKeyToResource(
     id: buildId(brand, index, truncateForId(apiKey)),
     brand,
     originalIndex: index,
-    name: null,
+    name: typeof config.source?.group.name === 'string' ? config.source.group.name : null,
     identifier: maskApiKey(apiKey) || `#${index + 1}`,
     apiKeyPreview: apiKey ? maskApiKey(apiKey) : null,
     apiKey: apiKey || null,
@@ -99,6 +99,10 @@ export function interactionsToResource(config: GeminiKeyConfig, index: number): 
 
 export function codexToResource(config: ProviderKeyConfig, index: number): ProviderResource {
   return providerKeyToResource('codex', config, index);
+}
+
+export function metaToResource(config: ProviderKeyConfig, index: number): ProviderResource {
+  return providerKeyToResource('meta', config, index);
 }
 
 export function xaiToResource(config: ProviderKeyConfig, index: number): ProviderResource {

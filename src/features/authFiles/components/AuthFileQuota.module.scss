@@ -70,6 +70,13 @@ button.quotaMessageAction {
   font-size: $quota-font-size;
   font-weight: 600;
   white-space: nowrap;
+
+  // Button wraps its icon and label in the final content span.
+  > span:last-child {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
 }
 
 /* ---------- Quota row (shared by all providers) ---------- */
@@ -204,28 +211,21 @@ button.quotaMessageAction {
   color: var(--amber-text);
 }
 
-/* Codex Pro 20x platinum (compact): structurally identical to the 5x gold value,
- * only the hue swapped to platinum steel-blue grey.
+/* 旗舰档（紧凑版）：与金卡档 premiumPlanValue 同构，只换颜色 —— 这一行的兄弟 chip
+ * 全是朴素 mono 文本，镶一枚发光徽章在 11px 行里只是吵，不是贵。
  *
- * In this row 5x is just recolored mono text (premiumPlanValue = amber text),
- * so 20x is also just recolored mono text. Previously a whole faceted gem sat
- * here: a 15px facet smeared into noise in an 11px row and ate 18px of left
- * padding that pushed the text off-center, while sibling chips are all plain
- * text -- a glowing stone among them is merely loud, not premium.
- *
- * Color values are from the quota page's family (liquid platinum, replacing MC
- * diamond cyan since 2026-07-31): light #526379 is 6.1:1 on white; dark is
- * lifted to silver-blue. Steel grey reads quiet in mono text, but that is this
- * tier's character -- platinum's luxury is cold; leave loud to amber. */
+ * 色值与额度页同族（和田玉金镶玉，2026-11-01 起替代液态铂金）：
+ * 浅色取青玉墨 #4f5a3c（对白底约 7:1）；深色取羊脂白 #e6dec4，
+ * 两者都是玉的颜色，与 amber 的金色明确区分。 */
 .elitePlanValue {
   font-family: $font-mono;
   font-size: $quota-font-size;
   font-weight: 650;
-  color: #526379;
+  color: #4f5a3c;
 }
 
 :global([data-theme='dark']) .elitePlanValue {
-  color: #c3d3e4;
+  color: #e6dec4;
 }
 
 /* ---------- Antigravity groups ---------- */
@@ -287,8 +287,9 @@ button.quotaMessageAction {
 .codexResetCreditRow {
   display: flex;
   align-items: baseline;
+  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 8px;
+  gap: 2px 8px;
   font-size: $quota-font-size;
   font-weight: 400;
 }
@@ -311,6 +312,8 @@ button.quotaMessageAction {
 
 .codexResetCreditTime {
   flex-shrink: 0;
+  margin-left: auto;
+  white-space: nowrap;
   font-family: $font-mono;
   font-variant-numeric: tabular-nums;
   color: var(--text-secondary);

@@ -1,6 +1,6 @@
 /**
  * Axios API client
- * Replaces src/core/api-client.js from the original project
+ * Replaces the original src/core/api-client.js
  */
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
@@ -20,8 +20,9 @@ class ApiClient {
   private instance: AxiosInstance;
   private apiBase: string = '';
   private managementKey: string = '';
+  private connectionRevision = 0;
 
-  constructor() {
+  constructor(private readonly emitEvents: () => boolean = () => true) {
     this.instance = axios.create({
       timeout: REQUEST_TIMEOUT_MS,
       headers: {
@@ -33,10 +34,14 @@ class ApiClient {
   }
 
   /**
-   * Set the API configuration
+   * Set API configuration
    */
   setConfig(config: ApiClientConfig): void {
-    this.apiBase = computeApiUrl(config.apiBase);
+    const apiBase = computeApiUrl(config.apiBase);
+    if (apiBase !== this.apiBase || config.managementKey !== this.managementKey) {
+      this.connectionRevision += 1;
+    }
+    this.apiBase = apiBase;
     this.managementKey = config.managementKey;
 
     if (config.timeout) {
@@ -44,6 +49,20 @@ class ApiClient {
     } else {
       this.instance.defaults.timeout = REQUEST_TIMEOUT_MS;
     }
+  }
+
+  /** Guards read/modify/write operations across connection changes, including ABA switches. */
+  getConnectionRevision(): number {
+    return this.connectionRevision;
+  }
+
+  /** Pin credentials and suppress response side effects after the owning connection changes. */
+  captureConnection(): ApiClient {
+    const revision = this.connectionRevision;
+    const client = new ApiClient(() => this.connectionRevision === revision);
+    client.apiBase = this.apiBase;
+    client.managementKey = this.managementKey;
+    return client;
   }
 
   private readHeader(headers: Record<string, unknown> | undefined, keys: string[]): string | null {
@@ -98,7 +117,7 @@ class ApiClient {
   }
 
   /**
-   * Set up request/response interceptors
+   * Set request/response interceptors
    */
   private setupInterceptors(): void {
     // Request interceptor
@@ -107,7 +126,7 @@ class ApiClient {
         // Set baseURL
         config.baseURL = this.apiBase;
 
-        // Add auth header
+        // Add authorization header
         if (this.managementKey) {
           config.headers.Authorization = `Bearer ${this.managementKey}`;
         }
@@ -127,15 +146,15 @@ class ApiClient {
         const buildDate = cpaBuildDate || this.readHeader(headers, BUILD_DATE_HEADER_KEYS);
         const supportsPlugin = this.readBooleanHeader(headers, CPA_SUPPORT_PLUGIN_HEADER_KEYS);
 
-        // Emit a version-update event (handled later by the store)
-        if (version || buildDate) {
+        // Dispatch version updates for store consumers
+        if (this.emitEvents() && (version || buildDate)) {
           window.dispatchEvent(
             new CustomEvent('server-version-update', {
               detail: { version: version || null, buildDate: buildDate || null },
             })
           );
         }
-        if (supportsPlugin !== null) {
+        if (this.emitEvents() && supportsPlugin !== null) {
           window.dispatchEvent(
             new CustomEvent('server-plugin-support-update', {
               detail: { supportsPlugin },
@@ -164,8 +183,8 @@ class ApiClient {
       apiError.details = responseData;
       apiError.data = responseData;
 
-      // 401 Unauthorized - emit a logout event
-      if (error.response?.status === 401) {
+      // Dispatch logout for unauthorized responses
+      if (this.emitEvents() && error.response?.status === 401) {
         window.dispatchEvent(new Event('unauthorized'));
       }
 
@@ -224,7 +243,7 @@ class ApiClient {
   }
 
   /**
-   * Get the raw response (for downloads and similar cases)
+   * Get the raw response (for downloads, etc.)
    */
   async getRaw(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse> {
     return this.instance.get(url, config);

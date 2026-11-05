@@ -5,6 +5,8 @@
  * silent undefined classes.
  */
 
+import type { ReactNode } from 'react';
+
 export interface QuotaClassMap {
   // Shared provider quota rows.
   quotaRow: string;
@@ -97,4 +99,8 @@ export function bindQuotaClasses(module: Record<string, string>, source: string)
 export interface QuotaBodyProps<TState> {
   quota: TState;
   classes: QuotaClassMap;
+  /** Host-owned chips appended to the provider's plan row (`codexPlanItem` spans). */
+  planItems?: ReactNode;
+  /** Host-owned content placed right after the plan row, before usage rows. */
+  afterPlan?: ReactNode;
 }

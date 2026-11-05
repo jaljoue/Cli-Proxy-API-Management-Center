@@ -70,35 +70,6 @@ class ObfuscatedStorageService {
   removeItem(key: string): void {
     localStorage.removeItem(key);
   }
-
-  /**
-   * Migrate legacy plaintext cache entries to the obfuscated format
-   */
-  migratePlaintextKeys(keys: string[]): void {
-    keys.forEach((key) => {
-      const raw = localStorage.getItem(key);
-      if (!raw) return;
-
-      // Already obfuscated: skip
-      if (isObfuscated(raw)) {
-        return;
-      }
-
-      let parsed: unknown;
-      try {
-        parsed = JSON.parse(raw);
-      } catch {
-        // Original value is not JSON: use the string as-is
-        parsed = raw;
-      }
-
-      try {
-        this.setItem(key, parsed);
-      } catch (error) {
-        console.warn(`Failed to migrate key "${key}":`, error);
-      }
-    });
-  }
 }
 
 export const obfuscatedStorage = new ObfuscatedStorageService();

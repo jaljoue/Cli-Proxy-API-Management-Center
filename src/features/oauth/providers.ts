@@ -1,5 +1,6 @@
 import type { BuiltInOAuthProvider } from '@/services/api';
-import { getPluginTitle, resolvePluginAssetURL } from '@/features/plugins/pluginResources';
+import { getPluginTitle } from '@/features/plugins/pluginResources';
+import { resolvePluginLogo } from '@/features/plugins/pluginLogos';
 import type { PluginListEntry } from '@/types';
 import iconMeta from '@/assets/icons/meta.svg';
 import iconCodex from '@/assets/icons/codex.svg';
@@ -148,7 +149,7 @@ export const buildPluginOAuthProviderCards = (
         kind: 'plugin' as const,
         id: provider,
         title: getPluginTitle(plugin),
-        icon: resolvePluginAssetURL(plugin.logo || plugin.metadata?.logo || '', apiBase),
+        icon: resolvePluginLogo(plugin.id, plugin.logo || plugin.metadata?.logo || '', apiBase),
       },
     ];
   });

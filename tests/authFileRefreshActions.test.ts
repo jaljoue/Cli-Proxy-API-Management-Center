@@ -49,6 +49,7 @@ function harness() {
       loads++;
     },
     t: (key: string) => key,
+    presentCredentialName: (name: string) => name,
     useCallback: (fn: unknown) => fn,
   };
   const block = source.slice(

@@ -439,7 +439,10 @@
     "quota_refresh_single": "Refresh quota",
     "quota_refresh_hint": "Refresh quota only for this credential",
     "quota_refresh_success": "Quota refreshed for \"{{name}}\"",
-    "quota_refresh_failed": "Failed to refresh quota for \"{{name}}\": {{message}}"
+    "quota_refresh_failed": "Failed to refresh quota for \"{{name}}\": {{message}}",
+    "show_emails": "Show emails",
+    "hide_emails": "Hide emails",
+    "mask_hint": "Emails in credential names are masked for screen sharing"
   },
   "antigravity_subscription": {
     "plan_unknown": "Unknown",

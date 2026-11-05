@@ -442,7 +442,10 @@
     "quota_refresh_single": "Обновить квоту",
     "quota_refresh_hint": "Обновить квоту только для этих учётных данных",
     "quota_refresh_success": "Квота для \"{{name}}\" обновлена",
-    "quota_refresh_failed": "Не удалось обновить квоту для \"{{name}}\": {{message}}"
+    "quota_refresh_failed": "Не удалось обновить квоту для \"{{name}}\": {{message}}",
+    "show_emails": "Показать email",
+    "hide_emails": "Скрыть email",
+    "mask_hint": "Email в именах учётных данных скрыты для демонстрации экрана"
   },
   "antigravity_subscription": {
     "plan_unknown": "Неизвестно",

@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { apiClient, authFilesApi, type AuthFileFieldsPatch } from '@/services/api';
 import { notifyAuthFilesChanged } from '@/features/authFiles/authFilesEvents';
 import type { AuthFileItem } from '@/types';
-import { useNotificationStore } from '@/stores';
+import { presentCredentialName, useNotificationStore } from '@/stores';
 import {
   applyAuthFileWebsockets,
   applyAuthFileUsingApi,
@@ -760,7 +760,10 @@ export function useAuthFilesPrefixProxyEditor(
       if (!isCurrentEditor()) return;
       onFilesMutated?.([name]);
       notifyAuthFilesChanged();
-      showNotification(t('auth_files.prefix_proxy_saved_success', { name }), 'success');
+      showNotification(
+        t('auth_files.prefix_proxy_saved_success', { name: presentCredentialName(name) }),
+        'success'
+      );
       await loadFiles();
       if (isCurrentEditor()) closePrefixProxyEditor();
     } catch (err: unknown) {

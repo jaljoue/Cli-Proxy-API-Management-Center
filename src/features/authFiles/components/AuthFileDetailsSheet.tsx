@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/Button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Input } from '@/components/ui/Input';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
-import { useNotificationStore } from '@/stores';
+import { useEmailMaskStore, useNotificationStore } from '@/stores';
+import { maskCredentialName } from '@/utils/credentialMask';
 import type {
   PrefixProxyEditorField,
   PrefixProxyEditorFieldValue,
@@ -53,6 +54,7 @@ export type AuthFileDetailsSheetProps = {
  */
 export function AuthFileDetailsSheet(props: AuthFileDetailsSheetProps) {
   const { t } = useTranslation();
+  const maskEmails = useEmailMaskStore((state) => state.maskEmails);
   const navigate = useNavigate();
   const { disableControls, editor, updatedText, dirty, onClose, onCopyText, onSave, onChange } =
     props;
@@ -127,7 +129,7 @@ export function AuthFileDetailsSheet(props: AuthFileDetailsSheetProps) {
       size="md"
       closeDisabled={editor?.saving === true}
       eyebrow={t('auth_files.prefix_proxy_button')}
-      title={editor?.fileName ?? ''}
+      title={editor ? (maskEmails ? maskCredentialName(editor.fileName) : editor.fileName) : ''}
       footer={
         <>
           <Button

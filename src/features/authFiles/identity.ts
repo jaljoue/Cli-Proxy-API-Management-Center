@@ -18,6 +18,7 @@
  */
 
 import type { AuthFileItem } from '@/types';
+import { maskCredentialName, maskKnownEmail } from '@/utils/credentialMask';
 
 export type AuthFileIdentityKind = 'email' | 'projectId' | 'fileName';
 
@@ -64,4 +65,29 @@ export const deriveAuthFileIdentity = (file: AuthFileItem): AuthFileIdentity => 
     kind === 'fileName' || !base || base.toLowerCase() === primary.toLowerCase() ? null : base;
 
   return { primary, kind, secondary, fullName };
+};
+
+/**
+ * Screen-share safe identity: masks the email in every visible field while keeping the
+ * provider prefix, hash and plan suffix readable. Project IDs are not personal data and stay
+ * as-is. Identity when `maskEmails` is false.
+ */
+export const maskAuthFileIdentity = (
+  identity: AuthFileIdentity,
+  email: unknown,
+  maskEmails: boolean
+): AuthFileIdentity => {
+  if (!maskEmails) return identity;
+  const known = readIdentityText(email);
+  return {
+    kind: identity.kind,
+    primary:
+      identity.kind === 'email'
+        ? maskKnownEmail(identity.primary)
+        : identity.kind === 'fileName'
+          ? maskCredentialName(identity.primary, known)
+          : identity.primary,
+    secondary: identity.secondary === null ? null : maskCredentialName(identity.secondary, known),
+    fullName: maskCredentialName(identity.fullName, known),
+  };
 };

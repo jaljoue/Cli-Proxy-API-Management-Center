@@ -108,6 +108,15 @@ describe('plugin OAuth tiles', () => {
     );
     expect(cards.map((card) => [card.id, card.title])).toEqual([['acme', 'a']]);
   });
+
+  test('falls back to a bundled logo for known plugins that ship without one', () => {
+    const [card] = buildPluginOAuthProviderCards(
+      [plugin({ id: 'opencode-go-cliproxyapi', oauthProvider: 'opencode-go' })],
+      'http://127.0.0.1:8317'
+    );
+    expect(card.icon).toBeTruthy();
+    expect(card.icon).not.toContain('127.0.0.1');
+  });
 });
 
 describe('OAuth provider gallery', () => {

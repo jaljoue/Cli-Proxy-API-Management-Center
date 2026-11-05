@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { IconRefreshCw, IconUpload } from '@/components/ui/icons';
+import { IconEye, IconEyeOff, IconRefreshCw, IconUpload } from '@/components/ui/icons';
 import { useRevealGroup } from '@/hooks/motion';
 import styles from './VaultHeader.module.scss';
 
@@ -17,6 +17,9 @@ export type VaultHeaderProps = {
   refreshingCredentials?: boolean;
   credentialRefreshDisabled?: boolean;
   onRefreshCredentials?: () => void;
+  /** Emails in credential names are masked (screen-share safe); omit to hide the toggle. */
+  maskEmails?: boolean;
+  onToggleMaskEmails?: () => void;
 };
 
 /**
@@ -37,6 +40,8 @@ export function VaultHeader(props: VaultHeaderProps) {
     refreshingCredentials = false,
     credentialRefreshDisabled = false,
     onRefreshCredentials,
+    maskEmails = true,
+    onToggleMaskEmails,
   } = props;
   const { t } = useTranslation();
   const revealRef = useRevealGroup<HTMLElement>();
@@ -70,6 +75,18 @@ export function VaultHeader(props: VaultHeaderProps) {
         </p>
       </div>
       <div className={styles.actions} data-reveal>
+        {onToggleMaskEmails && (
+          <button
+            type="button"
+            className={styles.ghostAction}
+            onClick={onToggleMaskEmails}
+            aria-pressed={!maskEmails}
+            title={t('auth_files.mask_hint')}
+          >
+            {maskEmails ? <IconEye size={14} /> : <IconEyeOff size={14} />}
+            {maskEmails ? t('auth_files.show_emails') : t('auth_files.hide_emails')}
+          </button>
+        )}
         {onRefreshCredentials && (
           <button
             type="button"

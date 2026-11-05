@@ -8,6 +8,7 @@
 
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { maskCredentialName } from '@/utils/credentialMask';
 
 export const EMAIL_MASK_STORAGE_KEY = 'cli-proxy-email-mask';
 
@@ -41,3 +42,10 @@ export const useEmailMaskStore = create<EmailMaskState>()(
     }
   )
 );
+
+/**
+ * Credential file name as it should appear in transient UI (toasts, confirmations) under the
+ * current preference. Reads the store imperatively so event handlers need no subscription.
+ */
+export const presentCredentialName = (name: string, email?: string | null): string =>
+  useEmailMaskStore.getState().maskEmails ? maskCredentialName(name, email) : name;

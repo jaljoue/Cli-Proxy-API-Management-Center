@@ -54,7 +54,7 @@ import {
   type AuthFilesStatusFilterMode,
   type AuthFilesSortMode,
 } from '@/features/authFiles/uiState';
-import { useAuthStore, useNotificationStore, useThemeStore } from '@/stores';
+import { useAuthStore, useEmailMaskStore, useNotificationStore, useThemeStore } from '@/stores';
 import styles from './AuthFilesPage.module.scss';
 
 const DEFAULT_REGULAR_PAGE_SIZE = 9;
@@ -82,6 +82,8 @@ export function AuthFilesPage() {
   const showNotification = useNotificationStore((state) => state.showNotification);
   const connectionStatus = useAuthStore((state) => state.connectionStatus);
   const resolvedTheme: ResolvedTheme = useThemeStore((state) => state.resolvedTheme);
+  const maskEmails = useEmailMaskStore((state) => state.maskEmails);
+  const toggleMaskEmails = useEmailMaskStore((state) => state.toggleMaskEmails);
   const pageTransitionLayer = usePageTransitionLayer();
   const isCurrentLayer = pageTransitionLayer ? pageTransitionLayer.status === 'current' : true;
   const navigate = useNavigate();
@@ -600,6 +602,8 @@ export function AuthFilesPage() {
         refreshingCredentials={refreshingAllCredentials}
         credentialRefreshDisabled={Object.keys(manualRefreshing).length > 0}
         onRefreshCredentials={handleRefreshAllCredentials}
+        maskEmails={maskEmails}
+        onToggleMaskEmails={toggleMaskEmails}
       />
       <AuthFileRefreshResults results={refreshResults} onClose={closeRefreshResults} />
       <input

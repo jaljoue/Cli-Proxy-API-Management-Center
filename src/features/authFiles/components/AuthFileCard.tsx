@@ -29,7 +29,9 @@ import {
   type AuthFileQuotaFilter,
   type ResolvedTheme,
 } from '@/features/authFiles/constants';
-import { deriveAuthFileIdentity } from '@/features/authFiles/identity';
+import { deriveAuthFileIdentity, maskAuthFileIdentity } from '@/features/authFiles/identity';
+import { useEmailMaskStore } from '@/stores';
+import { maskEmail } from '@/utils/credentialMask';
 import { resolveAuthFileQuotaType } from '@/features/authFiles/logic';
 import type { AuthFileStatusBarData } from '@/features/authFiles/hooks/useAuthFilesStatusBarCache';
 import { AuthFileQuotaSection } from '@/features/authFiles/components/AuthFileQuotaSection';
@@ -107,14 +109,19 @@ export function AuthFileCard(props: AuthFileCardProps) {
     (authIndexKey && statusBarCache.get(authIndexKey)) ||
     statusBarDataFromRecentRequests(file.recentRequests ?? []);
 
-  const rawStatusMessage = getAuthFileStatusMessage(file);
   const hasStatusWarning = hasAuthFileStatusWarning(file);
 
   const priorityValue = Number.isSafeInteger(file.priority) ? file.priority : undefined;
   const weightValue = Number.isSafeInteger(file.weight) ? file.weight : undefined;
   const noteValue = typeof file.note === 'string' ? file.note.trim() : '';
-  // Lead with account identity and use the file name as secondary text.
-  const identity = deriveAuthFileIdentity(file);
+  // Lead with account identity and use the file name as secondary text. Emails are masked
+  // (screen-share safe) unless the user chose to reveal them.
+  const maskEmails = useEmailMaskStore((state) => state.maskEmails);
+  const identity = maskAuthFileIdentity(deriveAuthFileIdentity(file), file.email, maskEmails);
+  const shownName = identity.fullName || file.name;
+  // Backend status messages can quote the account address.
+  const statusMessage = getAuthFileStatusMessage(file);
+  const rawStatusMessage = maskEmails && statusMessage ? maskEmail(statusMessage) : statusMessage;
   const siwcExpires = file.siwcExpiresAt
     ? formatDateTimeValue(file.siwcExpiresAt, i18n.language)
     : '';
@@ -143,8 +150,8 @@ export function AuthFileCard(props: AuthFileCardProps) {
             checked={selected}
             onChange={() => onToggleSelect(file.name)}
             className={styles.selection}
-            ariaLabel={t('auth_files.card_select', { name: file.name })}
-            title={t('auth_files.card_select', { name: file.name })}
+            ariaLabel={t('auth_files.card_select', { name: shownName })}
+            title={t('auth_files.card_select', { name: shownName })}
           />
         )}
         <h3 className={styles.identity}>
@@ -336,7 +343,7 @@ export function AuthFileCard(props: AuthFileCardProps) {
           <div className={styles.toggleWrap}>
             <span className={styles.toggleLabel}>{t('auth_files.status_toggle_label')}</span>
             <ToggleSwitch
-              ariaLabel={t('auth_files.card_toggle', { name: file.name })}
+              ariaLabel={t('auth_files.card_toggle', { name: shownName })}
               checked={!file.disabled}
               disabled={
                 disableControls ||

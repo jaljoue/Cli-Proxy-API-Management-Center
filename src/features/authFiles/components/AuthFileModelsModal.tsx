@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { AuthFileModelItem } from '@/features/authFiles/constants';
 import { isModelExcluded } from '@/features/authFiles/constants';
+import { useEmailMaskStore } from '@/stores';
+import { maskCredentialName } from '@/utils/credentialMask';
 import styles from './AuthFileModelsModal.module.scss';
 
 export type AuthFileModelsModalProps = {
@@ -21,12 +23,16 @@ export type AuthFileModelsModalProps = {
 export function AuthFileModelsModal(props: AuthFileModelsModalProps) {
   const { t } = useTranslation();
   const { open, fileName, fileType, loading, error, models, excluded, onClose, onCopyText } = props;
+  const maskEmails = useEmailMaskStore((state) => state.maskEmails);
+  const shownFileName = maskEmails ? maskCredentialName(fileName) : fileName;
 
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title={t('auth_files.models_title', { defaultValue: 'Supported models' }) + ` - ${fileName}`}
+      title={
+        t('auth_files.models_title', { defaultValue: 'Supported models' }) + ` - ${shownFileName}`
+      }
       footer={
         <Button variant="secondary" onClick={onClose}>
           {t('common.close')}

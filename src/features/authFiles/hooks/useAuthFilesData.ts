@@ -4,7 +4,7 @@ import { apiClient, authFilesApi } from '@/services/api';
 import type { AuthFileRefreshResult } from '@/services/api/authFiles';
 import { getAuthFileRefreshKey } from '@/features/authFiles/manualRefresh';
 import { notifyAuthFilesChanged } from '@/features/authFiles/authFilesEvents';
-import { useNotificationStore } from '@/stores';
+import { presentCredentialName, useNotificationStore } from '@/stores';
 import type { AuthFileItem } from '@/types';
 import { formatFileSize } from '@/utils/format';
 import { MAX_AUTH_FILE_SIZE } from '@/utils/constants';
@@ -323,7 +323,7 @@ export function useAuthFilesData(options?: UseAuthFilesDataOptions): UseAuthFile
     (name: string) => {
       showConfirmation({
         title: t('auth_files.delete_title', { defaultValue: 'Delete File' }),
-        message: `${t('auth_files.delete_confirm')} "${name}" ?`,
+        message: `${t('auth_files.delete_confirm')} "${presentCredentialName(name)}" ?`,
         variant: 'danger',
         confirmText: t('common.confirm'),
         onConfirm: async () => {
@@ -542,14 +542,20 @@ export function useAuthFilesData(options?: UseAuthFilesDataOptions): UseAuthFile
         );
         if (connectionRevision !== apiClient.getConnectionRevision()) return;
         invalidateInFlightLoads();
-        showNotification(t('auth_files.manual_refresh_requested', { name }), 'info');
+        showNotification(
+          t('auth_files.manual_refresh_requested', { name: presentCredentialName(name) }),
+          'info'
+        );
         notifyAuthFilesChanged();
         onFilesMutatedRef.current?.([name]);
         await loadFiles({ background: true });
       } catch (err: unknown) {
         if (connectionRevision !== apiClient.getConnectionRevision()) return;
         const message = err instanceof Error ? err.message : t('notification.update_failed');
-        showNotification(t('auth_files.manual_refresh_failed', { name, message }), 'error');
+        showNotification(
+          t('auth_files.manual_refresh_failed', { name: presentCredentialName(name), message }),
+          'error'
+        );
       } finally {
         manualRefreshPendingRef.current.delete(key);
         setManualRefreshing((prev) => {
@@ -617,7 +623,7 @@ export function useAuthFilesData(options?: UseAuthFilesDataOptions): UseAuthFile
       const connectionRevision = apiClient.getConnectionRevision();
       showConfirmation({
         title: t('auth_files.cooldown_reset_title'),
-        message: t('auth_files.cooldown_reset_confirm', { name: item.name }),
+        message: t('auth_files.cooldown_reset_confirm', { name: presentCredentialName(item.name) }),
         confirmText: t('auth_files.cooldown_reset_button'),
         variant: 'primary',
         onConfirm: async () => {
@@ -649,7 +655,7 @@ export function useAuthFilesData(options?: UseAuthFilesDataOptions): UseAuthFile
               )
             );
             showNotification(
-              t('auth_files.cooldown_reset_success', { name: item.name }),
+              t('auth_files.cooldown_reset_success', { name: presentCredentialName(item.name) }),
               'success'
             );
             await loadFiles({ background: true });
@@ -657,7 +663,10 @@ export function useAuthFilesData(options?: UseAuthFilesDataOptions): UseAuthFile
             if (connectionRevision !== apiClient.getConnectionRevision()) return;
             const message = err instanceof Error ? err.message : t('notification.update_failed');
             showNotification(
-              t('auth_files.cooldown_reset_failed', { name: item.name, message }),
+              t('auth_files.cooldown_reset_failed', {
+                name: presentCredentialName(item.name),
+                message,
+              }),
               'error'
             );
           } finally {
@@ -714,8 +723,8 @@ export function useAuthFilesData(options?: UseAuthFilesDataOptions): UseAuthFile
         );
         showNotification(
           enabled
-            ? t('auth_files.status_enabled_success', { name })
-            : t('auth_files.status_disabled_success', { name }),
+            ? t('auth_files.status_enabled_success', { name: presentCredentialName(name) })
+            : t('auth_files.status_disabled_success', { name: presentCredentialName(name) }),
           'success'
         );
       } catch (err: unknown) {

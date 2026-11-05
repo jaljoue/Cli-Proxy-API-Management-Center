@@ -27,14 +27,23 @@ describe('auth file card presentation contract', () => {
     const footer = source.split('<footer')[1].split('</footer>')[0];
     expect(source.match(/<ToggleSwitch/g)).toHaveLength(1);
     expect(header).not.toContain('<ToggleSwitch');
-    expect(header).toContain("ariaLabel={t('auth_files.card_select', { name: file.name })}");
+    expect(header).toContain("ariaLabel={t('auth_files.card_select', { name: shownName })}");
     expect(header).not.toContain('aria-label=');
     expect(footer).toContain('<ToggleSwitch');
-    expect(footer).toContain("t('auth_files.card_toggle', { name: file.name })");
+    expect(footer).toContain("t('auth_files.card_toggle', { name: shownName })");
     expect(footer).toContain('checked={!file.disabled}');
     expect(footer).toContain('statusUpdating[getAuthFileRefreshKey(file)] === true ||');
     expect(footer).toContain('isManualRefreshing');
     expect(footer).toContain('!isRuntimeOnly &&');
+  });
+
+  test('masks emails in every visible identity field while the preference is on', () => {
+    expect(source).toContain('useEmailMaskStore((state) => state.maskEmails)');
+    expect(source).toContain(
+      'maskAuthFileIdentity(deriveAuthFileIdentity(file), file.email, maskEmails)'
+    );
+    expect(source).toContain('title={identity.fullName}');
+    expect(source).toContain('maskEmail(statusMessage)');
   });
 
   test('dims disabled card content but keeps the re-enable controls clear', () => {

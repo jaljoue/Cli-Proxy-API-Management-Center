@@ -7,7 +7,7 @@ export { useAuthStore } from './useAuthStore';
 export { useLoginTransitionStore } from './useLoginTransitionStore';
 export { useConfigStore } from './useConfigStore';
 export { useModelsStore } from './useModelsStore';
-export { useEmailMaskStore } from './useEmailMaskStore';
+export { presentCredentialName, useEmailMaskStore } from './useEmailMaskStore';
 export {
   captureQuotaCacheGeneration,
   commitIfQuotaCacheCurrent,

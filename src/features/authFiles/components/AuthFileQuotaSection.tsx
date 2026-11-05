@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
   captureQuotaCacheGeneration,
   commitIfQuotaCacheCurrent,
+  presentCredentialName,
   useNotificationStore,
   useQuotaStore,
 } from '@/stores';
@@ -84,7 +85,12 @@ export function AuthFileQuotaSection(props: AuthFileQuotaSectionProps) {
           ...prev,
           [cacheKey]: adapter.buildSuccessState(data),
         }));
-        showNotification(t('auth_files.quota_refresh_success', { name: file.name }), 'success');
+        showNotification(
+          t('auth_files.quota_refresh_success', {
+            name: presentCredentialName(file.name, file.email),
+          }),
+          'success'
+        );
       });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t('common.unknown_error');
@@ -95,7 +101,10 @@ export function AuthFileQuotaSection(props: AuthFileQuotaSectionProps) {
           [cacheKey]: adapter.buildErrorState(message, status),
         }));
         showNotification(
-          t('auth_files.quota_refresh_failed', { name: file.name, message }),
+          t('auth_files.quota_refresh_failed', {
+            name: presentCredentialName(file.name, file.email),
+            message,
+          }),
           'error'
         );
       });
@@ -124,7 +133,9 @@ export function AuthFileQuotaSection(props: AuthFileQuotaSectionProps) {
 
     showConfirmation({
       title: t('codex_quota.reset_confirm_title'),
-      message: t('codex_quota.reset_confirm_message', { name: file.name }),
+      message: t('codex_quota.reset_confirm_message', {
+        name: presentCredentialName(file.name, file.email),
+      }),
       confirmText: t('codex_quota.reset_confirm_button'),
       variant: 'primary',
       onConfirm: async () => {
@@ -137,12 +148,23 @@ export function AuthFileQuotaSection(props: AuthFileQuotaSectionProps) {
               ...prev,
               [cacheKey]: adapter.buildSuccessState(data),
             }));
-            showNotification(t('codex_quota.reset_success', { name: file.name }), 'success');
+            showNotification(
+              t('codex_quota.reset_success', {
+                name: presentCredentialName(file.name, file.email),
+              }),
+              'success'
+            );
           });
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : t('common.unknown_error');
           commitIfQuotaCacheCurrent(cacheGeneration, () => {
-            showNotification(t('codex_quota.reset_failed', { name: file.name, message }), 'error');
+            showNotification(
+              t('codex_quota.reset_failed', {
+                name: presentCredentialName(file.name, file.email),
+                message,
+              }),
+              'error'
+            );
           });
         } finally {
           setResettingQuota(false);

@@ -29,7 +29,7 @@ const t = ((key: string) => key) as TFunction;
 
 const KEY_ID = 'opencode-go-key-8719680cf09b11b330404dffd7fa6ed71c5f6840baedc08510a7a68228e91721';
 
-/** The exact shape the plugin returns for `POST /plugins/opencode-go-cliproxyapi/quota-usage`. */
+/** The exact shape the plugin returns for `POST /v0/management/plugins/opencode-go-cliproxyapi/quota-usage`. */
 const usage = {
   rolling: { status: 'ok', percent: 0, resets_at: '2099-09-13T04:19:18.415Z' },
   weekly: { status: 'ok', percent: 12, resets_at: '2099-09-14T00:00:00.415Z' },
@@ -45,10 +45,11 @@ describe('opencodeGoApi', () => {
       return { key_id: KEY_ID, usage };
     }) as typeof apiClient.post;
 
+    apiClient.setConfig({ apiBase: 'https://cpa.example', managementKey: 'test-key' });
     try {
       const card = await opencodeGoApi.fetchQuota(KEY_ID);
       expect(request).toEqual({
-        url: '/plugins/opencode-go-cliproxyapi/quota-usage',
+        url: 'https://cpa.example/v0/management/plugins/opencode-go-cliproxyapi/quota-usage',
         data: { key_id: KEY_ID },
       });
       expect(card?.usage?.weekly?.percent).toBe(12);
@@ -56,6 +57,7 @@ describe('opencodeGoApi', () => {
       expect(card?.email).toBeUndefined();
     } finally {
       apiClient.post = originalPost;
+      apiClient.setConfig({ apiBase: '', managementKey: '' });
     }
   });
 

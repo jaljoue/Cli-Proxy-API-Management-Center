@@ -10,6 +10,7 @@ import {
   CPA_BUILD_DATE_HEADER_KEYS,
   CPA_SUPPORT_PLUGIN_HEADER_KEYS,
   CPA_VERSION_HEADER_KEYS,
+  MANAGEMENT_API_PREFIX,
   REQUEST_TIMEOUT_MS,
   VERSION_HEADER_KEYS,
 } from '@/utils/constants';
@@ -49,6 +50,16 @@ class ApiClient {
     } else {
       this.instance.defaults.timeout = REQUEST_TIMEOUT_MS;
     }
+  }
+
+  /**
+   * Server root without the management prefix, for routes CPA serves outside it
+   * (plugin-declared management routes are only dispatched under /v0/management).
+   */
+  getServerBase(): string {
+    return this.apiBase.endsWith(MANAGEMENT_API_PREFIX)
+      ? this.apiBase.slice(0, -MANAGEMENT_API_PREFIX.length)
+      : this.apiBase;
   }
 
   /** Guards read/modify/write operations across connection changes, including ABA switches. */

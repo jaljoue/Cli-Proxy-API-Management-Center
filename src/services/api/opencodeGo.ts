@@ -15,7 +15,10 @@ import type { OpencodeGoQuotaCardPayload, OpencodeGoUsagePayload } from '@/types
 export const OPENCODE_GO_PLUGIN_ID = 'opencode-go-cliproxyapi';
 export const OPENCODE_GO_KEY_ID_PREFIX = 'opencode-go-key-';
 
-const QUOTA_PATH = `/plugins/${OPENCODE_GO_PLUGIN_ID}/quota-usage`;
+// CPA dispatches plugin-declared management routes only under /v0/management, while
+// the rest of the client now targets /v8/management, so this route uses an absolute URL.
+export const OPENCODE_GO_QUOTA_PATH = `/v0/management/plugins/${OPENCODE_GO_PLUGIN_ID}/quota-usage`;
+const quotaUrl = () => `${apiClient.getServerBase()}${OPENCODE_GO_QUOTA_PATH}`;
 
 const asString = (value: unknown): string | undefined =>
   typeof value === 'string' && value.trim() ? value.trim() : undefined;
@@ -53,7 +56,7 @@ const normalizeCard = (value: unknown): OpencodeGoQuotaCardPayload | null => {
 export const opencodeGoApi = {
   /** Configured credentials, without contacting OpenCode. */
   async listQuotaCards(): Promise<OpencodeGoQuotaCardPayload[]> {
-    const data = await apiClient.post<Record<string, unknown>>(QUOTA_PATH, {});
+    const data = await apiClient.post<Record<string, unknown>>(quotaUrl(), {});
     const cards = isRecord(data) && Array.isArray(data.cards) ? data.cards : [];
     return cards
       .map((card) => normalizeCard(card))
@@ -62,7 +65,7 @@ export const opencodeGoApi = {
 
   /** Live usage for one credential; the plugin answers 502 when OpenCode is unreachable. */
   async fetchQuota(keyId: string): Promise<OpencodeGoQuotaCardPayload | null> {
-    const data = await apiClient.post<Record<string, unknown>>(QUOTA_PATH, { key_id: keyId });
+    const data = await apiClient.post<Record<string, unknown>>(quotaUrl(), { key_id: keyId });
     return normalizeCard(data);
   },
 };

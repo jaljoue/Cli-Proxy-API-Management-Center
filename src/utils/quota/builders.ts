@@ -26,6 +26,8 @@ const ANTIGRAVITY_BUCKET_WINDOW_ORDER = new Map<string, number>([
   ['five_hour', 0],
   ['weekly', 1],
   ['week', 1],
+  ['monthly', 2],
+  ['month', 2],
 ]);
 
 function toStableId(value: string, fallback: string): string {
@@ -59,6 +61,9 @@ function antigravityPeriodHours(window: string | undefined): number | null {
     case 'weekly':
     case 'week':
       return 24 * 7;
+    case 'monthly':
+    case 'month':
+      return 24 * 30;
     default:
       return null;
   }

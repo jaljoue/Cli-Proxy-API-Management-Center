@@ -1,68 +1,65 @@
 /**
- * OpenCode Go quota, served by the opencode-go-cliproxyapi plugin's management route.
+ * OpenCode Go quota through CPA v8's native plugin quota API.
  *
- * The plugin registers `POST /v0/management/plugins/opencode-go-cliproxyapi/quota-usage`:
- * an empty body lists the configured credentials (no upstream call), a body with
- * `key_id` fetches that credential's usage from OpenCode. The key id is the
- * sha256 of the API key, which is also the credential's auth-file basename.
- * Keys with All permissions also return the Go plan and the subscriber email.
+ * The opencode-go-cliproxyapi plugin declares the `quota_provider` capability, and the host
+ * serves `POST /v8/management/plugins/:pluginId/quota` with `{ "auth_index": "..." }`. The
+ * response follows the shared plugin quota shape: an optional `subscription` (present only
+ * when the API key has OpenCode Console access) and `groups[].buckets[]`, one bucket per
+ * usage window (`5h`, `weekly`, `monthly`) with the remaining fraction and reset instant.
  */
 
 import { apiClient } from './client';
 import { isRecord } from '@/utils/helpers';
-import type { OpencodeGoQuotaCardPayload, OpencodeGoUsagePayload } from '@/types';
+import type { OpencodeGoQuotaBucketPayload, OpencodeGoQuotaPayload } from '@/types';
 
+/** Fallback when an older credential listing lacks `quota_plugin_id`. */
 export const OPENCODE_GO_PLUGIN_ID = 'opencode-go-cliproxyapi';
-export const OPENCODE_GO_KEY_ID_PREFIX = 'opencode-go-key-';
 
-const QUOTA_PATH = `/plugins/${OPENCODE_GO_PLUGIN_ID}/quota-usage`;
+const asString = (value: unknown): string | null =>
+  typeof value === 'string' && value.trim() ? value.trim() : null;
 
-const asString = (value: unknown): string | undefined =>
-  typeof value === 'string' && value.trim() ? value.trim() : undefined;
+const asFraction = (value: unknown): number | null => {
+  const parsed =
+    typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN;
+  return Number.isFinite(parsed) ? parsed : null;
+};
 
-const normalizeUsage = (value: unknown): OpencodeGoUsagePayload | null => {
+const normalizeBucket = (value: unknown): OpencodeGoQuotaBucketPayload | null => {
   if (!isRecord(value)) return null;
-  const pick = (window: unknown) =>
-    isRecord(window)
-      ? {
-          status: asString(window.status) ?? null,
-          percent: (window.percent as number | string | null | undefined) ?? null,
-          resets_at: asString(window.resets_at ?? window.resetsAt) ?? null,
-        }
-      : null;
+  const window = asString(value.window);
+  if (!window) return null;
   return {
-    rolling: pick(value.rolling),
-    weekly: pick(value.weekly),
-    monthly: pick(value.monthly),
+    window,
+    remainingFraction: asFraction(value.remainingFraction ?? value.remaining_fraction),
+    resetTime: asString(value.resetTime ?? value.reset_time),
+    description: asString(value.description),
   };
 };
 
-const normalizeCard = (value: unknown): OpencodeGoQuotaCardPayload | null => {
-  if (!isRecord(value)) return null;
-  const keyId = asString(value.key_id ?? value.keyId);
-  if (!keyId) return null;
+export const normalizeOpencodeGoQuotaPayload = (value: unknown): OpencodeGoQuotaPayload => {
+  const payload = isRecord(value) ? value : {};
+  const subscription = isRecord(payload.subscription) ? payload.subscription : null;
+  const groups = Array.isArray(payload.groups) ? payload.groups : [];
+  const buckets = groups.flatMap((group) =>
+    isRecord(group) && Array.isArray(group.buckets)
+      ? group.buckets
+          .map((bucket) => normalizeBucket(bucket))
+          .filter((bucket): bucket is OpencodeGoQuotaBucketPayload => bucket !== null)
+      : []
+  );
   return {
-    key_id: keyId,
-    label: asString(value.label),
-    plan_type: asString(value.plan_type ?? value.planType),
-    email: asString(value.email),
-    usage: normalizeUsage(value.usage),
+    plan: subscription ? asString(subscription.plan) : null,
+    tierName: subscription ? asString(subscription.tierName ?? subscription.tier_name) : null,
+    buckets,
   };
 };
 
 export const opencodeGoApi = {
-  /** Configured credentials, without contacting OpenCode. */
-  async listQuotaCards(): Promise<OpencodeGoQuotaCardPayload[]> {
-    const data = await apiClient.post<Record<string, unknown>>(QUOTA_PATH, {});
-    const cards = isRecord(data) && Array.isArray(data.cards) ? data.cards : [];
-    return cards
-      .map((card) => normalizeCard(card))
-      .filter((card): card is OpencodeGoQuotaCardPayload => card !== null);
-  },
-
-  /** Live usage for one credential; the plugin answers 502 when OpenCode is unreachable. */
-  async fetchQuota(keyId: string): Promise<OpencodeGoQuotaCardPayload | null> {
-    const data = await apiClient.post<Record<string, unknown>>(QUOTA_PATH, { key_id: keyId });
-    return normalizeCard(data);
+  /** Live usage for one credential; the host answers 502 when OpenCode is unreachable. */
+  async fetchQuota(pluginId: string, authIndex: string): Promise<OpencodeGoQuotaPayload> {
+    const data = await apiClient.post<unknown>(`/plugins/${encodeURIComponent(pluginId)}/quota`, {
+      auth_index: authIndex,
+    });
+    return normalizeOpencodeGoQuotaPayload(data);
   },
 };

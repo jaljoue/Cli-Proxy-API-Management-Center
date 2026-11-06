@@ -524,30 +524,24 @@ export interface XaiQuotaState {
   errorStatus?: number;
 }
 
-// OpenCode Go (opencode-go-cliproxyapi plugin) payload types
-export interface OpencodeGoUsageWindowPayload {
-  status?: string | null;
-  /** Percent of the window already USED, 0..100. */
-  percent?: number | string | null;
-  resets_at?: string | null;
-  resetsAt?: string | null;
+// OpenCode Go (opencode-go-cliproxyapi plugin, CPA v8 native quota API) payload types
+export interface OpencodeGoQuotaBucketPayload {
+  /** Window id as the plugin reports it: `5h`, `weekly`, `monthly`. */
+  window: string;
+  /** Share of the window still available, 0..1 (1 - used percent / 100). */
+  remainingFraction: number | null;
+  resetTime: string | null;
+  description: string | null;
 }
 
-export interface OpencodeGoUsagePayload {
-  rolling?: OpencodeGoUsageWindowPayload | null;
-  weekly?: OpencodeGoUsageWindowPayload | null;
-  monthly?: OpencodeGoUsageWindowPayload | null;
-}
-
-export interface OpencodeGoQuotaCardPayload {
-  key_id?: string;
-  keyId?: string;
-  label?: string;
-  /** Go product (`go`, `go-plus`); absent when the key lacks Console access. */
-  plan_type?: string;
-  /** Subscriber email from the Console; absent when the key lacks Console access. */
-  email?: string;
-  usage?: OpencodeGoUsagePayload | null;
+/** Normalized `POST /plugins/:pluginId/quota` response. */
+export interface OpencodeGoQuotaPayload {
+  /** Raw Go product (`go`, `go-plus`); null when the key lacks Console access. */
+  plan: string | null;
+  /** Display label for `plan`; null when the key lacks Console access. */
+  tierName: string | null;
+  /** Buckets of every group, flattened; windows OpenCode does not report are absent. */
+  buckets: OpencodeGoQuotaBucketPayload[];
 }
 
 export interface OpencodeGoQuotaWindow {
@@ -560,14 +554,18 @@ export interface OpencodeGoQuotaWindow {
   resetAtMs?: number | null;
   /** 5 for the rolling window, 168 weekly, ~720 monthly. */
   periodHours?: number | null;
-  /** Upstream window status verbatim (`ok`, `exceeded`, …); null when absent. */
-  windowStatus?: string | null;
 }
 
 export interface OpencodeGoQuotaState {
   status: 'idle' | 'loading' | 'success' | 'error';
   windows: OpencodeGoQuotaWindow[];
   planType?: string | null;
+  /** Plugin-supplied display label for planType, used for plans the UI does not know. */
+  planLabel?: string | null;
+  /**
+   * Account email read back from the auth file after a refresh: the plugin stores it there
+   * during the fetch, so it can arrive before the page reloads its file list.
+   */
   email?: string | null;
   error?: string;
   errorStatus?: number;

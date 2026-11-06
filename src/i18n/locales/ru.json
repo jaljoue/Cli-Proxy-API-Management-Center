@@ -685,7 +685,7 @@
     "idle": "Нажмите, чтобы обновить квоту",
     "loading": "Загрузка квоты...",
     "load_failed": "Не удалось загрузить квоту: {{message}}",
-    "missing_key_id": "Учётные данные не являются записью ключа OpenCode Go",
+    "missing_auth_index": "В файле авторизации отсутствует auth_index",
     "empty_windows": "Нет данных о квоте",
     "rolling_limit": "Лимит на 5 часов",
     "weekly_limit": "Недельный лимит",

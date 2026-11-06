@@ -96,3 +96,22 @@ describe('Antigravity quota label keys', () => {
     ).toEqual(['five_hour_limit', 'weekly_limit', 'five_hour_limit', 'weekly_limit']);
   });
 });
+
+describe('plugin quota bucket windows', () => {
+  test('orders monthly after weekly and gives it a ~30-day period', () => {
+    const groups = buildAntigravityQuotaGroups({
+      groups: [
+        {
+          displayName: 'OpenCode Go',
+          buckets: [
+            { window: 'monthly', remainingFraction: 1, resetTime: '2099-01-30T00:00:00Z' },
+            { window: 'weekly', remainingFraction: 1, resetTime: '2099-01-07T00:00:00Z' },
+            { window: '5h', remainingFraction: 0.88, resetTime: '2099-01-01T05:00:00Z' },
+          ],
+        },
+      ],
+    });
+    expect(groups[0].buckets.map((b) => b.window)).toEqual(['5h', 'weekly', 'monthly']);
+    expect(groups[0].buckets.map((b) => b.periodHours)).toEqual([5, 168, 720]);
+  });
+});

@@ -22,7 +22,7 @@ export function OpencodeGoQuotaBody({ quota, classes }: QuotaBodyProps<OpencodeG
     [quota, now]
   );
   const windows = quota.windows ?? [];
-  const planLabel = getOpencodeGoPlanLabel(t, quota.planType);
+  const planLabel = getOpencodeGoPlanLabel(t, quota.planType, quota.planLabel);
 
   return (
     <>

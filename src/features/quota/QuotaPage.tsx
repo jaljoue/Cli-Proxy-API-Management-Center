@@ -181,9 +181,9 @@ export function QuotaPage() {
       const file = fileByKey.get(key);
       const name = file?.name ?? getQuotaCacheFileName(key);
       const fileEmail = typeof file?.email === 'string' ? file.email.trim() : '';
-      // The plugin saves the OpenCode Go email during a refresh, so it can arrive here before
-      // the file list is reloaded.
-      const email = fileEmail || opencodeGoQuota[name]?.email || null;
+      // The plugin saves the OpenCode Go email into the auth file during a refresh; the
+      // adapter reads it back, so it can arrive here before the file list is reloaded.
+      const email = fileEmail || opencodeGoQuota[key]?.email || null;
       const multiIdentity = key !== name;
       return credentialIdentityLabel({
         name,

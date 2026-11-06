@@ -682,7 +682,7 @@
     "idle": "Click here to refresh quota",
     "loading": "Loading quota...",
     "load_failed": "Failed to load quota: {{message}}",
-    "missing_key_id": "Credential is not an OpenCode Go key record",
+    "missing_auth_index": "Auth file missing auth_index",
     "empty_windows": "No quota data available",
     "rolling_limit": "5-hour limit",
     "weekly_limit": "Weekly limit",

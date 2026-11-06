@@ -500,7 +500,7 @@ function buildOpencodeGoRow(quota: OpencodeGoQuotaState, input: LedgerRowInput):
   const meters = metersFromWindows(quota.windows ?? [], t, now, locale, urgentId);
   return {
     ...EMPTY_ROW,
-    planLabel: getOpencodeGoPlanLabel(t, quota.planType),
+    planLabel: getOpencodeGoPlanLabel(t, quota.planType, quota.planLabel),
     planTone: isOpencodeGoPremiumPlan(quota.planType) ? 'premium' : 'plain',
     meters: promotePrimary(meters, firstIdOf(meters, ['weekly'])),
     message: meters.length === 0 ? t('opencode_go_quota.empty_windows') : null,

@@ -18,28 +18,29 @@ import styles from './Field.module.scss';
 export const FIELD_HIGHLIGHT_CLASS: string = styles.fieldHighlightActive;
 
 /**
- * 表单控件宿主 class：区块编辑器内 :global(.input/.form-group/...) 覆盖的作用域根。
- * SectionCard 的内容区自动挂载；脱离卡片渲染表单块（如 Modal 内容）时手动挂。
+ * Form host class: scope root for block editors' :global(.input/.form-group/...) overrides.
+ * SectionCard applies it automatically; apply manually to form blocks outside cards, such as
+ * modals.
  */
 export const FIELDS_ROOT_CLASS: string = styles.fieldsRoot;
 
 const cx = (...classes: Array<string | false | undefined>) => classes.filter(Boolean).join(' ');
 
 /* ======================================================================
-   设置行：开关 / 输入 / 下拉 / 区块编辑器共用同一副骨架——
-   左列「标题 + 说明 + 错误」，右列控件；只有控件槽的内容不同。
-   行收进 SettingList（圆角容器 + 发丝分隔线），宽容器下两列排布。
+   Setting rows share one layout for toggles, inputs, selects, and block editors.
+   Title, description, and error on the left; control on the right. Only the control slot differs.
+   SettingList wraps rows in a rounded container with thin separators and two columns when wide.
    ====================================================================== */
 
 type SettingCopy = {
-  /** 搜索锚点：行本身即锚点（DOM id 见 configFieldDomId）。 */
+  /** Search anchor: the row itself is the anchor; see configFieldDomId for DOM IDs. */
   fieldId: string;
   label: string;
   description?: ReactNode;
   error?: string;
   /**
-   * 两列布局下独占一整行——只为语义而设（长 URL、总开关置顶）。
-   * 落单的行（末尾或下一项独占）由 SettingList 自动补成整行，无需手动凑奇偶。
+   * Explicit full width for semantic needs, such as long URLs or top-level toggles.
+   * SettingList expands unpaired rows automatically; no manual odd/even balancing is needed.
    */
   wide?: boolean;
 };
@@ -80,7 +81,8 @@ function SettingRow({
   ids: SettingIds;
   kind: RowKind;
   size?: ControlSize;
-  /** 有单一控件时标题即 <label htmlFor>；区块编辑器无单一控件，标题只作分组名。 */
+  /** With one control, use <label htmlFor>; for block editors, the title names the group
+   * instead. */
   labelFor?: string;
   control: ReactNode;
 }) {
@@ -173,9 +175,10 @@ export function TextSetting({
     value: string;
     disabled?: boolean;
     onChange: (value: string) => void;
-    /** sm = 数字 / 时长；md = 普通文本；lg = URL、路径、UA 等长文本。 */
+    /** sm = numbers / durations; md = ordinary text; lg = URLs, paths, user agents, and other
+     * long text. */
     size?: ControlSize;
-    /** 输入框内右侧的状态标记（如 keepalive 为 0 时的「已禁用」）。 */
+    /** Status marker inside the input on the right, such as Disabled when keepalive is zero. */
     adornment?: ReactNode;
   }) {
   const ids = useSettingIds(copy.fieldId);
@@ -253,9 +256,9 @@ export function SelectSetting<T extends string>({
 export type BlockSettingA11y = { describedBy?: string; invalid: boolean };
 
 /**
- * 区块编辑器行（字符串列表、ICE 服务器等）：标题与说明在上，编辑器在下独占整行。
- * 编辑器外包 role="group"，以标题命名、以说明/错误描述；
- * children 传函数时可拿到 describedBy 自行挂到内部控件上。
+ * Block editor row: title and description above, editor spanning the full width below.
+ * Wrap the editor in role="group", named by its title and described by its description/error.
+ * A children render function receives describedBy to attach to internal controls.
  */
 export function BlockSetting({
   children,
@@ -287,7 +290,8 @@ export function BlockSetting({
   );
 }
 
-/** 自带标题区的区块（如 API 密钥卡片编辑器）：只提供锚点与整行单元格，不渲染标题。 */
+/** Blocks with their own heading, such as API-key editors: provide an anchor and full-width cell
+ * only. */
 export function SettingCell({ fieldId, children }: { fieldId: string; children: ReactNode }) {
   return (
     <div id={configFieldDomId(fieldId)} className={cx(styles.row, styles.rowCell, styles.rowWide)}>
@@ -298,7 +302,8 @@ export function SettingCell({ fieldId, children }: { fieldId: string; children: 
 
 type RowElement = ReactElement<{ wide?: boolean; children?: ReactNode }>;
 
-/** 展开 Fragment（如 TLS 开启后才出现的证书/私钥两行），并给嵌套项加前缀防 key 冲突。 */
+/** Flatten Fragments, such as conditional TLS certificate/key rows; prefix nested keys to avoid
+ * clashes. */
 function flattenRows(children: ReactNode, prefix = ''): RowElement[] {
   return Children.toArray(children).flatMap((child) => {
     if (!isValidElement<{ wide?: boolean; children?: ReactNode }>(child)) return [];
@@ -313,10 +318,10 @@ const isFullRow = (row: RowElement) =>
   row.type === BlockSetting || row.type === SettingCell || Boolean(row.props.wide);
 
 /**
- * 设置组：可选的组标题 + 一个圆角列表容器。容器宽度足够时行两列排布，
- * 窄屏单列、输入行改为上下堆叠（容器查询，随侧栏收起/折叠组缩进自适应）。
- * 两列配对只读直接子元素的 props.wide（及 BlockSetting / SettingCell 类型），
- * 包装组件若要占整行，须在调用处显式传 wide。
+ * Setting group: optional heading and rounded list, with two columns when the container is wide.
+ * Narrow containers stack input rows, adapting to sidebar changes and nested group indentation.
+ * Pairing reads only direct children's props.wide and BlockSetting / SettingCell types.
+ * Wrappers needing full width must receive wide explicitly at the call site.
  */
 export function SettingList({
   title,
@@ -329,7 +334,7 @@ export function SettingList({
 }) {
   const rows = flattenRows(children);
   const spans = resolveRowSpans(rows.map(isFullRow));
-  // 有组标题才是带名分区；无标题时只是一个列表容器。
+  // A heading makes this a named section; otherwise it is just a list container.
   const Group = title ? 'section' : 'div';
   return (
     <Group className={styles.group}>
@@ -348,7 +353,7 @@ export function SettingList({
   );
 }
 
-/* ---------- 布局与区块编辑器内部原语 ---------- */
+/* ---------- Layout and block editor primitives ---------- */
 
 export function FieldGrid({ children }: { children: ReactNode }) {
   return <div className={styles.fieldGrid}>{children}</div>;
@@ -368,7 +373,7 @@ export function FieldAnchor({ fieldId, children }: { fieldId: string; children: 
   );
 }
 
-/** 独立的提示行（SettingCell 里编辑器上方的说明等）。 */
+/** Standalone hint row, such as a description above an editor in SettingCell. */
 export function FieldHint({ id, children }: { id?: string; children: ReactNode }) {
   return (
     <div id={id} className={styles.fieldHint}>
@@ -377,7 +382,7 @@ export function FieldHint({ id, children }: { id?: string; children: ReactNode }
   );
 }
 
-/** 区块编辑器内部的「标签在上」字段（载荷规则等多控件表单）。 */
+/** Label-above fields inside block editors, such as multi-control payload forms. */
 export function FieldShell({
   label,
   labelId,

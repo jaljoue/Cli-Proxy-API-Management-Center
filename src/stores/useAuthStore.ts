@@ -21,7 +21,8 @@ interface AuthStoreState extends AuthState {
   logout: () => void;
   checkAuth: () => Promise<boolean>;
   restoreSession: () => Promise<boolean>;
-  /** 同步判断 restoreSession 是否会尝试自动登录（不产生副作用），用于决定首屏显示启动画面还是表单 */
+  /** Check auto-login eligibility synchronously without side effects to choose the splash or
+   * form. */
   hasRestorableSession: () => boolean;
   updateServerVersion: (version: string | null, buildDate?: string | null) => void;
   updateServerPluginSupport: (supportsPlugin: boolean) => void;
@@ -30,8 +31,9 @@ interface AuthStoreState extends AuthState {
 let restoreSessionPromise: Promise<boolean> | null = null;
 
 /**
- * 自动登录的前提：上次登录时勾选了记住密码且未登出（isLoggedIn 标记），并且保存了密钥。
- * restoreSession 与 hasRestorableSession 共用此判断，保证"显示启动画面"与"真的去自动登录"一致。
+ * Auto-login requires a remembered password, no logout since login, and a saved key.
+ * restoreSession and hasRestorableSession share this check so splash and auto-login decisions
+ * agree.
  */
 export const shouldAttemptAutoLogin = (
   wasLoggedIn: boolean,
@@ -99,12 +101,13 @@ export const useAuthStore = create<AuthStoreState>()(
         if (typeof localStorage === 'undefined') return false;
         const wasLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
         const { apiBase, managementKey } = get();
-        // 与 restoreSession 相同：地址总能回退到当前访问地址，因此只需地址非空的占位判断
+        // As in restoreSession, the address falls back to the current URL; only a nonempty check is
+        // needed.
         const base = apiBase || detectApiBaseFromLocation();
         return shouldAttemptAutoLogin(wasLoggedIn, base, managementKey);
       },
 
-      // 登录
+      // Log in.
       login: async (credentials) => {
         const apiBase = normalizeApiBase(credentials.apiBase);
         const managementKey = credentials.managementKey.trim();
@@ -127,7 +130,8 @@ export const useAuthStore = create<AuthStoreState>()(
             managementKey,
           });
 
-          // 测试连接 - 获取配置。只在 v8 路由不存在时诊断旧版后端。
+          // Fetch config to test the connection. Diagnose legacy backends only when the v8 route is
+          // missing.
           const revision = apiClient.getConnectionRevision();
           try {
             await useConfigStore.getState().fetchConfig(true);

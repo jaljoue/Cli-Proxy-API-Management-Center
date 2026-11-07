@@ -20,8 +20,8 @@ export type ProviderTabsProps = {
 };
 
 /**
- * 提供商过滤 tabs：水平排布，支持鼠标滚轮与触屏横向滚动。
- * 品牌色只出现在图标上，激活态是文字 + 2px 墨色下划线。
+ * Provider filter tabs with horizontal mouse-wheel and touch scrolling.
+ * Brand colors appear only on icons; active tabs use text and a 2px ink-colored underline.
  */
 export function ProviderTabs({
   types,

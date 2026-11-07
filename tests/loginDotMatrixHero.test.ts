@@ -79,7 +79,8 @@ describe('login dot-matrix steady state', () => {
   });
 
   test('keeps changing continuously like the reference video', () => {
-    // 视频实测：每帧约 2.9% 的点亮/熄灭切换，1 秒后点亮状态仅约 45% 重合
+    // Measured from video: about 2.9% of dots toggle per frame; only 45% retain their lit state
+    // after 1s.
     const frames = Array.from({ length: FPS }, (_, index) => sample(5 + index / FPS));
     let flips = 0;
     let litTotal = 0;
@@ -111,7 +112,7 @@ describe('login dot-matrix steady state', () => {
     const seed = 0x0b17;
     const t = 1.5;
     const shift = Math.round(DRIFT_SPEED * t);
-    // col 向左递增：向左漂移意味着 t 秒后的 col + shift 应与 t=0 的 col 最相似
+    // col increases leftward: after t seconds, col + shift should best match the initial frame.
     const correlation = (offset: number) => {
       let sum = 0;
       for (let row = 0; row < 60; row += 1) {
@@ -194,7 +195,7 @@ describe('login dot-matrix on mobile', () => {
     }
     expect(topRightLatest).toBeLessThan(bottomLeftEarliest);
     expect(banner.introDuration).toBeLessThanOrEqual(1.2 + 1e-6);
-    // 点距随横幅高度收紧，保证小屏也有足够的点
+    // Tighten dot spacing with banner height so small screens still have enough dots.
     expect(banner.pitch).toBe(MIN_PITCH);
     expect(n).toBeGreaterThan(1000);
   });
@@ -219,7 +220,7 @@ describe('login dot-matrix on mobile', () => {
     expect(brandPanel).toContain('height: var(--hero-band)');
     expect(brandPanel).toContain('pointer-events: none');
     expect(page).toMatch(/--hero-band: clamp\(/);
-    // 横幅向下淡出；标语在移动端让位给表单标题
+    // Fade the banner downward; on mobile, the tagline gives way to the form title.
     const mobileHero = hero.slice(hero.indexOf('@media (max-width: $breakpoint-mobile)'));
     expect(mobileHero).toMatch(/mask-image: linear-gradient\(\s*to bottom/);
     expect(mobileHero).toMatch(/\.title \{\s*display: none;/);

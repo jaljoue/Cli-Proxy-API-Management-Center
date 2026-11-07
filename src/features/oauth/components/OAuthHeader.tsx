@@ -8,8 +8,8 @@ export interface OAuthHeaderProps {
 }
 
 /**
- * 标题领衔 + ▍mono 遥测 meta 行（与凭证库/额度页同语汇，无 eyebrow、无页头按钮）。
- * meta 语义：等待授权数是「进行中」（墨色 + 呼吸点），本次新增是「活数据」（绿）。
+ * Title with a monospace metadata row, matching auth files/quota pages, without eyebrow or actions.
+ * Pending authorizations use ink text and a pulsing dot; new credentials use green for live data.
  */
 export function OAuthHeader({ providerCount, waitingCount, addedCount }: OAuthHeaderProps) {
   const { t } = useTranslation();

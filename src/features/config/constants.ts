@@ -15,7 +15,7 @@ import type { VisualSectionId } from './searchIndex';
 /** Edit mode: visual form or YAML source. */
 export type ConfigEditorMode = 'visual' | 'source';
 
-/** 顶部 tabs：'common'（常用，原简单模式的继任者）+ 6 个正典分区。 */
+/** Top tabs: common replaces simple mode, followed by six canonical sections. */
 export type ConfigTabId = 'common' | VisualSectionId;
 
 export const CONFIG_SECTION_IDS = [
@@ -29,7 +29,7 @@ export const CONFIG_SECTION_IDS = [
 
 export const CONFIG_TAB_IDS: readonly ConfigTabId[] = ['common', ...CONFIG_SECTION_IDS];
 
-/** 分区序号（01–06）。常用 tab 是别名视图，不占序号。 */
+/** Section numbers 01-06. Common is an alias view and does not receive a number. */
 export const SECTION_INDEX_LABELS: Record<VisualSectionId, string> = {
   connectivity: '01',
   network: '02',
@@ -49,7 +49,8 @@ export const CONFIG_TAB_ICONS: Record<ConfigTabId, ComponentType<IconProps>> = {
   payload: IconCode,
 };
 
-/** 常用 tab 的 6 个字段（原简单模式），渲染源与正典分区共享（fields/sharedFields.tsx）。 */
+/** Six common-tab fields share rendering with canonical sections through
+ * fields/sharedFields.tsx. */
 export const COMMON_FIELD_IDS = [
   'host',
   'port',
@@ -96,9 +97,9 @@ export const SECTION_VALIDATION_FIELDS: Record<VisualSectionId, readonly VisualC
   };
 
 /**
- * fieldId → useVisualConfig dirtyFields 的键（= VisualConfigValues 叶值键，streaming 用点号叶）。
- * 与搜索索引一一对应；三方对账由 tests/configFieldParity.test.ts 守护 ——
- * 增删字段时漏改任何一边（索引 / 本表 / 分区 JSX）都会红。
+ * Map fieldId to useVisualConfig dirtyFields keys: VisualConfigValues leaves, dotted for streaming.
+ * Match the search index one-to-one; tests/configFieldParity.test.ts checks all three sources.
+ * Field changes must update the index, this map, and section JSX together.
  */
 export const FIELD_VALUE_KEYS: Record<string, readonly string[]> = {
   routingSessionAffinitySubagents: ['routingSessionAffinitySubagents'],

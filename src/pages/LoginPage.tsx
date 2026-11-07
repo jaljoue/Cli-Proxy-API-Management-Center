@@ -21,10 +21,10 @@ import styles from './LoginPage.module.scss';
 
 export type LoginPhase = 'idle' | 'connecting' | 'success' | 'exiting';
 
-/** 左上角品牌名：产品全称，所有语言下保持英文，不走 i18n */
+/** Top-left brand name: the full product name stays English in all locales, without i18n. */
 export const LOGIN_BRAND_NAME = 'CLI Proxy API Management Center';
 
-/** 语言下拉层最小宽度：最长的语言名（繁體中文（台灣））单行显示 */
+/** Minimum language dropdown width to keep language names on one line. */
 const LANGUAGE_DROPDOWN_MIN_WIDTH = 180;
 
 /**
@@ -105,7 +105,8 @@ export function LoginPage() {
   const restoreSession = useAuthStore((state) => state.restoreSession);
 
   const detectedBase = useMemo(() => detectApiBaseFromLocation(), []);
-  // 首帧即用已保存的连接信息填好表单：没有可恢复会话时表单直接出现，不闪启动画面
+  // Prefill saved connection details on the first frame; skip the splash without a restorable
+  // session.
   const [apiBase, setApiBase] = useState(() => useAuthStore.getState().apiBase || detectedBase);
   const [managementKey, setManagementKey] = useState(
     () => useAuthStore.getState().managementKey || ''
@@ -117,7 +118,7 @@ export function LoginPage() {
     return remembered || Boolean(key);
   });
   const [phase, setPhase] = useState<LoginPhase>('idle');
-  // 仅在确实会自动登录时显示启动画面
+  // Show the splash only when auto-login will actually run.
   const [autoLoading, setAutoLoading] = useState(() =>
     useAuthStore.getState().hasRestorableSession()
   );
@@ -175,14 +176,15 @@ export function LoginPage() {
         const autoLoggedIn = await restoreSession();
         if (autoLoggedIn) {
           setAutoLoginSuccess(true);
-          // 每次打开都会经过启动画面：网络快时补足最短停留，避免一闪而过；网络慢时不再额外等待
+          // Honor the minimum splash time on fast networks; add no extra wait on slow networks.
           const { splashMin } = getLoginTransitionTimings(prefersReducedMotion());
           const elapsed = performance.now() - splashStartedAt;
           leaveTo(redirectTarget, Math.max(0, splashMin - elapsed));
         } else {
-          // 按最新的已保存信息回填表单（restoreSession 可能迁移了旧版存储）。
-          // 自动登录被 401 拒绝时全局会登出并清空存储，此时保留首帧填入的地址与密钥，
-          // 用户修正后即可直接重试，自定义地址也不会丢失。
+          // Refill from the latest saved values; restoreSession may have migrated older storage.
+          // A 401 during auto-login clears storage through global logout; retain the initial
+          // address and key
+          // so the user can correct and retry without losing a custom address.
           const stored = useAuthStore.getState();
           setApiBase((previous) => stored.apiBase || previous || detectedBase);
           setManagementKey((previous) => stored.managementKey || previous);
@@ -207,7 +209,7 @@ export function LoginPage() {
     }
 
     const baseToUse = apiBase ? normalizeApiBase(apiBase) : detectedBase;
-    // 先进入 connecting：登录成功瞬间 isAuthenticated 变真时不会被立即重定向打断
+    // Set connecting first so authentication success does not trigger an immediate redirect.
     setPhase('connecting');
     setError('');
     try {
@@ -251,7 +253,8 @@ export function LoginPage() {
       </div>
 
       <div className={styles.formPanel}>
-        {/* 自动登录启动页自带大徽标与品牌名，此时不再渲染顶栏，避免重复 */}
+        {/* The auto-login splash includes the large logo and brand name, so omit the duplicate
+            top bar. */}
         {!showSplash && (
           <header className={styles.topBar}>
             <div className={styles.brandMark}>

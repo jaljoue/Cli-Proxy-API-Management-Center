@@ -1,9 +1,9 @@
 @use '../../../../styles/mixins' as *;
 
-/* 字段原语：设置行（开关 / 输入 / 下拉 / 区块编辑器共用一副骨架）+ 区块编辑器的 scoped 覆盖。
-   交互反馈一律引用全局动效 tokens（--dur-* / --ease-out-strong）。 */
+/* Shared setting-row layout for toggles, inputs, selects, and block editors, plus scoped overrides.
+   All interaction feedback uses global motion tokens: --dur-* / --ease-out-strong. */
 
-/* ---------- 表单控件宿主（区块编辑器内 :global 控件的统一几何） ---------- */
+/* ---------- Form host: consistent sizing for block editors' :global controls ---------- */
 
 .fieldsRoot {
   :global(.form-group) {
@@ -18,7 +18,7 @@
     letter-spacing: 0.02em;
   }
 
-  /* 设置行与区块编辑器里的输入框同一副几何：36px 高、8px 圆角、纸色底。 */
+  /* Match setting-row and block-editor inputs: 36px high, 8px corners, paper background. */
   :global(.input) {
     min-height: 36px;
     padding: 7px 11px;
@@ -63,10 +63,10 @@
   }
 }
 
-/* ---------- 设置组：组标题 + 圆角列表容器 ---------- */
+/* ---------- Setting group: heading + rounded list ---------- */
 
-/* 组本身是容器查询的宿主：列数与行内堆叠都看「这一组有多宽」，
-   而不是视口——侧栏收起、折叠组缩进都会自然生效。 */
+/* Use each group's width, not viewport width, for column count and row stacking.
+   Container queries adapt naturally to sidebar collapse and nested group indentation. */
 .group {
   container: setting-list / inline-size;
   display: flex;
@@ -105,7 +105,7 @@
   border: 1px solid var(--border-color);
   border-radius: 12px;
   background: color-mix(in srgb, var(--bg-secondary) 55%, transparent);
-  /* 裁掉分隔线越界的部分 + 圆角；下拉菜单走 portal，不受影响。 */
+  /* Clip overflowing separators and round corners; portaled dropdowns are unaffected. */
   overflow: hidden;
 }
 
@@ -115,7 +115,7 @@
   }
 }
 
-/* ---------- 设置行 ---------- */
+/* ---------- Setting rows ---------- */
 
 .row {
   --setting-control: auto;
@@ -128,14 +128,15 @@
   min-height: 64px;
   padding: 14px 18px;
   box-sizing: border-box;
-  /* 发丝分隔线：向右、向下各投 1px，越出列表的部分被 overflow 裁掉，只剩行间与列间的线。 */
+  /* Cast 1px separators right and down; overflow clips outer edges, leaving only internal grid
+   * lines. */
   box-shadow:
     1px 0 0 var(--border-color),
     0 1px 0 var(--border-color);
   scroll-margin-top: calc(var(--header-height, 64px) + 16px);
 }
 
-/* 控件槽宽度分三档；百分比兜底保证标题列永远有一半以上的位置。 */
+/* Three control widths; percentage limits reserve at least half the row for the title column. */
 .size_sm {
   --setting-control: min(136px, 42%);
 }
@@ -152,14 +153,14 @@
   grid-column: 1 / -1;
 }
 
-/* 区块编辑器行：标题区在上，编辑器独占下方整行。 */
+/* Block editor row: heading above, full-width editor below. */
 .rowBlock {
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: 12px;
 }
 
-/* 自带标题区的区块单元格（API 密钥等）。 */
+/* Block cell with its own heading, such as API keys. */
 .rowCell {
   display: block;
   padding: 16px 18px;
@@ -180,7 +181,7 @@
   overflow-wrap: anywhere;
 }
 
-/* 开关行的标题同样是 <label htmlFor>：点标题即切换。 */
+/* Toggle-row titles also use <label htmlFor>, so clicking the title toggles the control. */
 .rowToggle .rowLabel {
   cursor: pointer;
 }
@@ -216,7 +217,7 @@
   display: block;
 }
 
-/* 下拉触发器对齐输入框几何（Select 自带 40px + 投影，这里收成同一套）。 */
+/* Match select triggers to inputs, overriding Select's default 40px height and shadow. */
 .selectControl > button[aria-haspopup='listbox'] {
   height: 36px;
   padding: 0 11px;
@@ -242,7 +243,7 @@
   }
 }
 
-/* 输入框内右侧的状态标记（keepalive「已禁用」）。 */
+/* Right-hand input status marker, such as Disabled for keepalive. */
 .rowControl > :global(.input).inputWithAdornment {
   padding-right: 64px;
 }
@@ -266,7 +267,7 @@
   pointer-events: none;
 }
 
-/* 窄组（手机、深层折叠）：输入行改为上下堆叠，开关始终留在右侧。 */
+/* Narrow groups stack input rows vertically; toggles stay on the right. */
 @container setting-list (max-width: 520px) {
   .row {
     padding: 12px 14px;
@@ -282,7 +283,7 @@
   }
 }
 
-/* ---------- 搜索锚点与脉冲高亮 ---------- */
+/* ---------- Search anchors and pulse highlight ---------- */
 
 .fieldAnchor {
   display: block;
@@ -291,8 +292,8 @@
   scroll-margin-top: calc(var(--header-height, 64px) + 16px);
 }
 
-/* 内描边 + 淡底色：行位于 overflow:hidden 的列表里，外扩的 box-shadow 会被裁掉，
-   且行的分隔线本身就是 box-shadow，所以脉冲改走 outline（向内偏移）。 */
+/* Use an inset outline and faint fill: overflow:hidden would clip an outer box-shadow.
+   Row separators already use box-shadow, so the pulse uses outline with a negative offset. */
 .fieldHighlightActive {
   animation: config-field-highlight 1.8s var(--ease-out-strong, ease-out);
 }
@@ -315,7 +316,7 @@
   }
 }
 
-/* ---------- 区块编辑器内部布局原语 ---------- */
+/* ---------- Block editor layout primitives ---------- */
 
 .fieldGrid {
   display: grid;
@@ -353,7 +354,7 @@
   line-height: 1.55;
 }
 
-/* ---------- 无障碍 ---------- */
+/* ---------- Accessibility ---------- */
 
 @media (prefers-reduced-motion: reduce) {
   .fieldsRoot :global(.input),

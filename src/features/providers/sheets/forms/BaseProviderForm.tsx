@@ -741,7 +741,7 @@ export function BaseProviderForm({
         supportsErrors={descriptor.supportsRequestScopedErrors}
       />
 
-      {/* 高级折叠区 */}
+      {/* Advanced collapsible section. */}
       {descriptor.supportsApiKeyEntries && form.apiKeyEntries ? (
         <Collapsible
           label={t('providersPage.form.apiKeyEntriesSection')}

@@ -1,6 +1,6 @@
 /**
- * xAI 额度渲染体：套餐 chip 行（档位见 cardTier.ts）、
- * 周/月账单水位条、按量付费余额。
+ * xAI quota body: plan chips, weekly/monthly billing bars,
+ * and pay-as-you-go balance. See cardTier.ts for tiers.
  */
 
 import { useMemo } from 'react';

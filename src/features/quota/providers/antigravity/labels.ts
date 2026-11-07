@@ -1,8 +1,8 @@
 /**
- * Antigravity 额度标签 → i18n key 解析（纯函数，便于测试）。
+ * Pure Antigravity quota-label to i18n-key mapping for testing.
  *
- * 上游 displayName 会随版本变化（如 "Five Hour Limit Remaining"），因此先按
- * 归一化后的文案匹配，匹配不到再回落到结构化的 `window` 字段。
+ * Upstream displayName changes across versions, such as Five Hour Limit Remaining; match normalized
+ * text first, then fall back to the structured window field.
  */
 
 import type { TFunction } from 'i18next';
@@ -36,7 +36,7 @@ const BUCKET_WINDOW_KEYS = new Map<string, string>([
 ]);
 
 /**
- * 上游分组描述未列出、但实际共享该分组额度的模型，追加到「此分组包含」列表末尾。
+ * Append models that share the group's quota but are absent from its upstream model description.
  */
 const GROUP_EXTRA_MODELS = new Map<string, readonly string[]>([
   ['group_gemini_models', ['Gemini Argon']],
@@ -46,7 +46,7 @@ const GROUP_MODELS_PATTERN = /^models within this group:\s*(.+)$/i;
 
 const normalizeText = (value: string): string => value.trim().toLowerCase().replace(/\s+/g, ' ');
 
-/** 去掉上游常见的 "Remaining" 后缀，如 "Weekly Limit Remaining" → "weekly limit"。 */
+/** Strip the common Remaining suffix, such as Weekly Limit Remaining -> weekly limit. */
 const stripRemainingSuffix = (value: string): string =>
   value.replace(/\s*(?:-|:)?\s*remaining$/, '').trim();
 
@@ -55,8 +55,10 @@ export function resolveAntigravityGroupLabelKey(label: string): string | null {
 }
 
 /**
- * 解析分组描述中的模型列表，并追加该分组的补充模型（大小写不敏感去重）。
- * 描述不是「Models within this group: ...」格式时返回 null，由调用方显示原文。
+ * Parse models from a group description and append supplemental models, deduplicating
+ * case-insensitively.
+ * Return null unless the description starts with Models within this group: so callers show raw
+ * text.
  */
 export function resolveAntigravityGroupModels(
   label: string,
@@ -99,8 +101,8 @@ interface AntigravityBucketLike {
 }
 
 /**
- * 满额桶是否显示「额度可用」。同组周限额已耗尽时，5 小时限额即使满额也不可用
- * （上游会把它标为 disabled 且 remainingFraction 仍为 1），此时不显示「额度可用」。
+ * A full five-hour bucket is unavailable if its group's weekly limit is exhausted.
+ * Upstream marks it disabled even with remainingFraction = 1; do not show Quota available then.
  */
 export function shouldShowAntigravityQuotaAvailable(
   bucket: AntigravityBucketLike,

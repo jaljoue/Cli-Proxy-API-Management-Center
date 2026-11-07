@@ -1018,8 +1018,8 @@
   }
 }
 
-// 仅桌面端：移动端侧栏本身依赖 transform 收起，不叠加入场。
-// 总时长不超过揭幕时长（640ms），揭幕结束时类名撤销不会跳变。
+// Desktop only: the mobile sidebar already uses transform to collapse, so skip entry animation.
+// Stay within the 640ms reveal so removing the class at its end does not cause a jump.
 @keyframes shellSidebarIn {
   from {
     opacity: 0;

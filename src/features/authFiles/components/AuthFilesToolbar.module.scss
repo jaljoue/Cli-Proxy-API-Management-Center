@@ -25,7 +25,8 @@
     height: 36px;
     border-radius: 10px;
     font-size: 13px;
-    /* 为右侧搜索图标留出空间，避免与占位符/输入文字重叠 */
+    /* Reserve space for the right-hand search icon so it does not overlap input text or
+     * placeholders. */
     padding-right: 34px;
     text-overflow: ellipsis;
   }

@@ -13,7 +13,7 @@ export function LoginRevealVeil() {
 
   useEffect(() => {
     if (phase !== 'revealing') return;
-    // 兜底：animationend 在后台标签页或被禁用动画时可能不触发
+    // Fallback: animationend may not fire in background tabs or when animations are disabled.
     const { reveal } = getLoginTransitionTimings(prefersReducedMotion());
     const timer = window.setTimeout(finishReveal, reveal + 120);
     return () => window.clearTimeout(timer);

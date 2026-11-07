@@ -7,8 +7,8 @@ import { FieldGrid, FieldShell } from '../fields/FieldPrimitives';
 import styles from './Blocks.module.scss';
 
 /**
- * ICE 服务器列表。标题、说明与校验错误由外层 BlockSetting 渲染；
- * describedBy / invalid 由它传入，挂到每个内部控件上。
+ * ICE server list. The outer BlockSetting renders the title, description, and validation errors.
+ * Pass its describedBy / invalid props to each internal control.
  */
 export function CodexLiveICEServersEditor({
   value,

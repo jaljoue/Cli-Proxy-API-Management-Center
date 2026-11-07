@@ -8,8 +8,8 @@ import styles from './CopyButton.module.scss';
 const COPIED_RESET_MS = 1400;
 
 /**
- * 复制按钮：成功时图标就地变成对勾（反馈贴着动作发生，不弹 toast），
- * 失败才走全局通知。屏幕阅读器通过 role=status 听到「已复制」。
+ * On success, replace the copy icon with a checkmark for inline feedback instead of a toast.
+ * Use global notifications only for failures; role=status announces Copied to screen readers.
  */
 export function CopyButton({
   value,

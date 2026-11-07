@@ -1,7 +1,7 @@
 /**
- * 两列网格里哪些行要占满整行：显式 wide 的行，以及会落单的行
- * （位于行首、且它是最后一项或下一项占满整行）——否则右侧会空出一格。纯函数，便于测试。
- * SettingList 用它决定给哪些子行注入 wide。
+ * Determine full-width rows in a two-column grid: explicit wide rows and otherwise unpaired rows.
+ * A row is unpaired at a row start if it is last or followed by a full-width row. Pure for testing.
+ * SettingList uses this to decide which child rows receive wide.
  */
 export function resolveRowSpans(wide: readonly boolean[]): boolean[] {
   let column = 0;

@@ -36,7 +36,7 @@ describe('auto-login entry (plan A)', () => {
     expect(source).not.toContain('LoadingSpinner');
     expect(source).toMatch(/<Navigate to="\/login" replace state=\{state\} \/>/);
     expect(source).toContain('search: location.search');
-    // 已通过本次会话验证时直接渲染子路由
+    // Render child routes directly once this session has been verified.
     expect(source).toMatch(/if \(!isAuthenticated\) \{[\s\S]*?\}\s*return children;/);
   });
 
@@ -62,14 +62,15 @@ describe('restorable session detection', () => {
   test('hasRestorableSession mirrors restoreSession without side effects', () => {
     const { hasRestorableSession } = useAuthStore.getState();
     useAuthStore.setState({ apiBase: 'http://proxy.example.com', managementKey: 'sk-demo' });
-    expect(hasRestorableSession()).toBe(false); // 已登出 / 未记住密码：无 isLoggedIn 标记
+    expect(hasRestorableSession()).toBe(false); // Logged out or password not remembered: no
+    // isLoggedIn flag.
 
     values.set('isLoggedIn', 'true');
     expect(hasRestorableSession()).toBe(true);
 
     useAuthStore.setState({ managementKey: '' });
     expect(hasRestorableSession()).toBe(false);
-    expect(values.get('isLoggedIn')).toBe('true'); // 只读判断，不改存储
+    expect(values.get('isLoggedIn')).toBe('true'); // Read-only check; does not change storage.
   });
 
   test('the login page only shows the splash when it will actually auto-login', async () => {
@@ -77,7 +78,7 @@ describe('restorable session detection', () => {
     expect(source).toMatch(
       /useState\(\(\) =>\s*useAuthStore\.getState\(\)\.hasRestorableSession\(\)\s*\)/
     );
-    // 首帧即用已保存信息填表，不等 restoreSession
+    // Populate the form from saved values on the first frame, without waiting for restoreSession.
     expect(source).toContain('useState(() => useAuthStore.getState().apiBase || detectedBase)');
   });
 });

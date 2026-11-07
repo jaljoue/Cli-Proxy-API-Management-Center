@@ -1,5 +1,5 @@
-// 两阶段保存：预览前读取 → 确认时再读取；服务端变化则重新预览。
-// 可视化仅提交 v8 字段差异，源码保留整份 YAML 保存。
+// Two-phase save: read before preview and again on confirmation; re-preview if the server changed.
+// Visual mode submits only v8 field differences; source mode still saves the entire YAML document.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { parse as parseYaml, parseDocument } from 'yaml';

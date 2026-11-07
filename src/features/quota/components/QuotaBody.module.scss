@@ -3,11 +3,11 @@
 /* ============================================================
  * Full-page skin for the quota card body (typed contract in features/quota/types.ts).
  *
- * 两段构成：
- * 1. 额度行 / 水位条 / Antigravity 分组 —— mono 遥测风，与紧凑外衣同族；
- * 2. 套餐徽章区（.codexPlan* 起至文件末尾）—— 定稿资产：premium = 金卡，
- *    flagship = 和田玉金镶玉（2026-11-01 起替代液态铂金）；含暗色 / HDR /
- *    减动效冻结帧 / 移动端降级。**改配方等于重设计已验收的徽章**，须先确认。
+ * Two sections:
+ * 1. Quota rows, level bars, and Antigravity groups use the compact cards' monospace styling.
+ * 2. Plan badges from .codexPlan* onward are approved designs: premium is gold,
+ *    flagship is gold-set Hetian jade, replacing liquid platinum since 2026-11-01, with dark/HDR,
+ *    reduced-motion, and mobile variants. Confirm before redesigning these approved badges.
  * ============================================================ */
 
 /* ---------- Quota rows ---------- */
@@ -453,20 +453,21 @@
   }
 }
 
-/* 旗舰档 —— 和田玉 · 金镶玉（2026-11-01 起替代液态铂金）。
- * 与金卡（premiumPlanValue）的档差：金卡是一整枚金，旗舰是「金只做镶边，主体是玉」。
+/* Flagship tier: gold-set Hetian jade, replacing liquid platinum since 2026-11-01.
+ * Unlike the solid gold premiumPlanValue badge, flagship uses a jade body with gold edging.
  *
- * 玉之所以像玉，靠的是这些细节（背景自上而下 + ::after 纹理）：
- *   1. 抛光点：左上一粒很小的亮点 —— 玉面是抛过光的；
- *   2. 油脂光泽：上方一块宽而软的反光 —— 羊脂玉的光是蜡质的「润」，不是镜面的「亮」；
- *   3. 次表面透光：光像从玉肉里透出来，极缓游移（14s 往返）；
- *   4. 底部聚光：光穿过玉肉在底缘聚出一汪亮色，是「透」的关键；
- *   5. 棉：两处白色絮点；
- *   6. 糖色：右下一抹极淡的赭色籽料皮，天然料的记号；
- *   7. 玉肉：青白羊脂底 —— 一丝青灰是和田白玉与象牙、珍珠的分界，纯奶白会读成塑料；
- *   8. 纹理（::after）：分形噪声的玉肉斑驳 + 一根发丝细的石纹，正片叠底压进玉面。
- * 金边：2px 斜面金（上亮下暗），金与玉之间一道细「口」线（inset），像镶嵌的包边。
- * 两主题玉体同为浅色 —— 暗卡上羊脂玉本身就是柔光源，只压暗一档免得刺眼。 */
+ * Jade details, ordered by background layer, followed by the ::after texture:
+ *   1. A tiny upper-left highlight suggests a polished surface.
+ *   2. A broad, soft upper reflection gives white jade a waxy sheen rather than a mirror shine.
+ *   3. Slowly drifting subsurface light, with a 14s round trip.
+ *   4. Light pools along the bottom edge to suggest translucency.
+ *   5. Two white flecks suggest natural inclusions.
+ *   6. A faint ochre patch at bottom-right suggests natural stone skin.
+ *   7. A blue-gray tint distinguishes white jade from ivory or pearl; plain cream looks plastic.
+ *   8. ::after adds fractal mottling and a hairline vein, multiplied into the jade surface.
+ * The 2px beveled gold border is brighter above and darker below, with an inset seam against the
+ * jade.
+ * Keep jade light in both themes; dim it slightly on dark cards to avoid glare. */
 @property --jade-light-x {
   syntax: '<percentage>';
   inherits: false;
@@ -506,7 +507,7 @@
   font-weight: 700;
   font-size: 12px;
   letter-spacing: 0.03em;
-  /* 2px 金边，内边距各收 1px，外径与金卡等高 */
+  /* 2px gold border; reduce each padding by 1px to match the gold badge's outer height. */
   padding: 1px 8px;
   border-radius: 999px;
   white-space: nowrap;
@@ -549,7 +550,7 @@
   text-shadow: var(--jade-ink-shadow);
   text-transform: capitalize;
 
-  /* 温润光晕：静止的暖白柔光，与金卡同一套 blur 构造但不呼吸 */
+  /* Static warm-white glow: use the gold badge's blur structure without pulsing. */
   &::before {
     content: '';
     position: absolute;
@@ -568,8 +569,9 @@
     z-index: -1;
   }
 
-  /* 玉肉纹理：分形噪声斑驳（青灰）+ 一根发丝石纹，正片叠底压在玉面上、文字之下。
-   * 内联 SVG，不引外部资源（单文件构建）。 */
+  /* Jade texture: blue-gray fractal mottling and a hairline vein, multiplied above the jade, below
+   * text.
+   * Inline SVG avoids external resources for the single-file build. */
   &::after {
     content: '';
     position: absolute;
@@ -583,7 +585,8 @@
     z-index: -1;
   }
 
-  /* P3 屏：金边多一档彩度（暖金有色域外的彩度可扩，玉体是低彩度，无需扩） */
+  /* P3 displays increase gold-border saturation; low-saturation jade needs no wider-gamut
+   * adjustment. */
   @media (dynamic-range: high) {
     --jade-gold: linear-gradient(
       180deg,
@@ -605,7 +608,7 @@
   }
 }
 
-/* 暗色：玉体压暗一档、光晕收敛；金边压暗避免在深底上刺眼。 */
+/* Dark theme: dim jade, tighten the glow, and darken gold edges to reduce glare. */
 :global([data-theme='dark']) .elitePlanValue {
   --jade-ink: #2e3a26;
   --jade-ink-shadow: 0 1px 0 rgba(252, 252, 240, 0.45);
@@ -636,7 +639,7 @@
   }
 }
 
-/* 减动效：玉光停在居中的一帧 —— 静态也是完成品。 */
+/* Reduced motion: freeze the jade light at the middle frame for a finished static appearance. */
 @media (prefers-reduced-motion: reduce) {
   .elitePlanValue,
   :global([data-theme='dark']) .elitePlanValue {
@@ -645,7 +648,7 @@
   }
 }
 
-/* 高对比：去掉光泽、絮与纹理，只留实色玉体 + 实色金边。 */
+/* High contrast: remove sheen, flecks, and texture; retain solid jade fill and gold border. */
 @media (prefers-contrast: more) {
   .elitePlanValue {
     background:
@@ -696,8 +699,8 @@
       0 0 10px rgba(255, 196, 44, 0.18);
   }
 
-  // 玉徽章移动端：与金卡同一刀 —— 砍模糊光晕层；
-  // 玉光游移只是一个渐变中心的重绘，~70×20px 成本可忽略，保留。
+  // Mobile jade badge: remove the blurred glow layer, as with the gold badge.
+  // Keep the drifting gradient center; repainting roughly 70x20px is negligible.
   .elitePlanValue {
     overflow: hidden;
 

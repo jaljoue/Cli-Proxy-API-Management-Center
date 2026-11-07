@@ -1,17 +1,18 @@
 @use '../../../styles/mixins' as *;
 
 /* ============================================================
- * 授权对话框：品牌头 → 步骤（打开授权页 / 设备码 / 回调）→ 底部实时状态条。
- * 主操作是墨色药丸；次操作描边药丸；遥测（链接、设备码、状态）一律 mono。
+ * Authorization dialog: brand header, steps for link/device code/callback, then live status footer.
+ * Ink-filled primary pills, outlined secondary pills; links, device codes, and status use
+ * monospace.
  * ============================================================ */
 
-/* ---------- 壳层：局部改写全局 modal 的头/体/脚与动效 ---------- */
+/* ---------- Shell: override global modal header/body/footer and motion ---------- */
 
 :global(.modal).dialog {
   border-radius: 18px;
   transform-origin: 50% 45%;
 
-  /* 全局 modal 是回弹放大 + 收缩到 0；这里换成 Premium 档：无回弹、退出更快 */
+  /* Replace the global modal's spring scale and shrink-to-zero with no bounce and a faster exit. */
   &:global(.modal-entering) {
     animation: oauth-dialog-in 280ms var(--ease-out-strong, ease-out) both;
   }
@@ -60,7 +61,7 @@
   }
 }
 
-/* ---------- 品牌头 ---------- */
+/* ---------- Brand header ---------- */
 
 .heading {
   display: flex;
@@ -113,7 +114,8 @@
   color: var(--text-tertiary);
 }
 
-/* ---------- 视图切换：容器先落定，内容随后 60ms 淡入（次级运动） ---------- */
+/* ---------- View transitions: settle container first, then fade content in after 60ms
+ * ---------- */
 
 .view {
   animation: oauth-view-in 220ms var(--ease-out-strong, ease-out) 60ms backwards;
@@ -173,7 +175,7 @@
   overflow-wrap: anywhere;
 }
 
-/* ---------- 步骤：mono 序号 + 细竖轨 ---------- */
+/* ---------- Steps: monospace numbers + thin vertical track ---------- */
 
 .steps {
   counter-reset: oauth-step;
@@ -196,7 +198,7 @@
     padding-bottom: 0;
   }
 
-  /* 竖轨连到下一个序号 */
+  /* Connect the vertical track to the next step number. */
   &:not(:last-child)::before {
     content: '';
     position: absolute;
@@ -270,7 +272,7 @@
   overflow-wrap: anywhere;
 }
 
-/* ---------- 授权链接 ---------- */
+/* ---------- Authorization link ---------- */
 
 .urlField {
   display: flex;
@@ -326,7 +328,7 @@
   }
 }
 
-/* ---------- 设备码 ---------- */
+/* ---------- Device code ---------- */
 
 .codeRow {
   display: flex;
@@ -349,7 +351,7 @@
   user-select: all;
 }
 
-/* ---------- 回调 ---------- */
+/* ---------- Callback ---------- */
 
 .callbackRow {
   display: flex;
@@ -388,7 +390,7 @@
   color: var(--viz-success);
 }
 
-/* ---------- 按钮 ---------- */
+/* ---------- Buttons ---------- */
 
 %pill {
   @include button-reset;
@@ -430,7 +432,7 @@
   }
 }
 
-/* 墨色药丸（深色主题自动反相） */
+/* Ink-filled pill, automatically inverted in the dark theme. */
 .primary {
   @extend %pill;
   background: var(--text-primary);
@@ -483,7 +485,7 @@
   }
 }
 
-/* ---------- 底部状态条 ---------- */
+/* ---------- Status footer ---------- */
 
 .statusBar {
   display: flex;
@@ -520,7 +522,7 @@
   border-radius: 50%;
   background: currentColor;
 
-  /* 轮询中的呼吸环：说明系统正在等，而不是卡住 */
+  /* Pulsing ring during polling indicates that the system is waiting, not stuck. */
   &::after {
     content: '';
     position: absolute;
@@ -559,7 +561,7 @@
   text-align: right;
 }
 
-/* ---------- 成功 ---------- */
+/* ---------- Success ---------- */
 
 .result {
   display: flex;
@@ -632,7 +634,7 @@
   margin-top: 14px;
 }
 
-/* ---------- 窄屏 ---------- */
+/* ---------- Narrow screens ---------- */
 
 @include mobile {
   :global(.modal).dialog {
@@ -657,7 +659,7 @@
     flex-direction: column;
   }
 
-  /* 纵向堆叠时 flex: 1 会沿主轴压扁输入框 */
+  /* In a vertical flex layout, flex: 1 would compress the input along the main axis. */
   .callbackInput {
     flex: none;
   }

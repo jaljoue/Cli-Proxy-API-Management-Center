@@ -90,7 +90,7 @@ export function ConfigPage() {
       readSavedSection(localStorage.getItem(CONFIG_SECTION_STORAGE_KEY))
   );
   const handledRequestedFieldRef = useRef<string | null>(null);
-  // 首载入场：挂载后一个预算周期内为 true；此后切 tab 新挂载的卡片不再播入场。
+  // Enable entry animation only for the initial mount budget; later tab mounts do not replay it.
   const [animateCards, setAnimateCards] = useState(true);
   useEffect(() => {
     const timer = window.setTimeout(() => setAnimateCards(false), ENTRANCE_BUDGET_MS);
@@ -146,9 +146,10 @@ export function ConfigPage() {
     );
   }, [mode, showNotification, t, visualParseError]);
 
-  // 可视化 ↔ 源码切换的 dirty 交接：
-  // → 源码：物化可视化脏字段供查看，但不把同步动作记作用户源码编辑；
-  // → 可视化：源码草稿必须先保存或放弃；纯查看源码往返保留字段级 dirty。
+  // Transfer dirty state when switching between visual and source modes.
+  // To source: materialize dirty visual fields for inspection without marking a user source edit.
+  // To visual: save or discard source edits first; viewing source alone preserves field-level dirty
+  // state.
   const handleModeChange = useCallback(
     (nextMode: ConfigEditorMode) => {
       if (nextMode === mode) return;

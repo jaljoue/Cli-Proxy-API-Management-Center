@@ -7,7 +7,8 @@ import { getValidationMessage } from '../blocks/shared';
 
 const Icon = CONFIG_TAB_ICONS.streaming;
 
-/** 04 流式传输：keepalive 与 bootstrap 重试；nonstream-keepalive-interval 是顶层 YAML 键。 */
+/** 04 Streaming: keepalive and bootstrap retries; nonstream-keepalive-interval is a top-level
+ * YAML key. */
 export function SectionStreaming({
   values,
   validationErrors,
@@ -22,7 +23,8 @@ export function SectionStreaming({
     t,
     validationErrors?.['streaming.nonstreamKeepaliveInterval']
   );
-  // 0 / 空即关闭：输入框内右侧标「已禁用」，校验出错时让位给错误信息。
+  // Zero or empty disables keepalive; show Disabled inside the input unless a validation error
+  // exists.
   const disabledBadge = t('config_management.visual.sections.streaming.disabled');
   const isKeepaliveOff = !keepaliveError && Number(streaming.keepaliveSeconds) <= 0;
   const isNonstreamKeepaliveOff =

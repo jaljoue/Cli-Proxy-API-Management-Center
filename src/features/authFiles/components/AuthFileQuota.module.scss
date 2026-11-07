@@ -211,12 +211,13 @@ button.quotaMessageAction {
   color: var(--amber-text);
 }
 
-/* 旗舰档（紧凑版）：与金卡档 premiumPlanValue 同构，只换颜色 —— 这一行的兄弟 chip
- * 全是朴素 mono 文本，镶一枚发光徽章在 11px 行里只是吵，不是贵。
+/* Compact flagship tier: reuse premiumPlanValue with different colors.
+ * Keep the 11px row consistent with its plain monospace chips rather than adding a glowing badge.
  *
- * 色值与额度页同族（和田玉金镶玉，2026-11-01 起替代液态铂金）：
- * 浅色取青玉墨 #4f5a3c（对白底约 7:1）；深色取羊脂白 #e6dec4，
- * 两者都是玉的颜色，与 amber 的金色明确区分。 */
+ * Match the quota page's gold-set Hetian jade palette, replacing liquid platinum since 2026-11-01.
+ * Use jade ink #4f5a3c on light themes, about 7:1 against white, and ivory jade #e6dec4 on dark
+ * themes.
+ * Both jade colors remain distinct from amber gold. */
 .elitePlanValue {
   font-family: $font-mono;
   font-size: $quota-font-size;

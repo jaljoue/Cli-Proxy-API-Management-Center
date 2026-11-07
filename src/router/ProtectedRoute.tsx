@@ -4,9 +4,9 @@ import { useAuthStore } from '@/stores';
 import type { LoginRedirectState } from './loginRedirect';
 
 /**
- * 未通过本次会话验证时一律交给登录页：
- * 保存了密码的用户在登录页经由启动画面自动登录，并以统一的"开灯"过渡回到原目标页；
- * 没有可恢复会话的用户直接看到登录表单。
+ * Send sessions that have not been verified to the login page.
+ * Users with saved passwords auto-login through the splash and reveal their original destination.
+ * Users without a restorable session see the login form directly.
  */
 export function ProtectedRoute({ children }: { children: ReactElement }) {
   const location = useLocation();

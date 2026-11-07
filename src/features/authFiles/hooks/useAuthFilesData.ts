@@ -29,12 +29,13 @@ type DeleteAllOptions = {
 };
 
 export type LoadFilesOptions = {
-  /** 后台刷新：不置 loading（网格保持内容），改用 refreshing 标志。 */
+  /** Background refresh uses refreshing rather than loading to keep grid content visible. */
   background?: boolean;
 };
 
 export type UseAuthFilesDataOptions = {
-  /** 文件集发生变更（上传/删除/手动刷新）后触发，供缓存失效等联动。 */
+  /** Called after uploads, deletions, or manual refreshes for cache invalidation and related
+   * updates. */
   onFilesMutated?: (names?: string[]) => void;
 };
 
@@ -103,7 +104,8 @@ export function useAuthFilesData(options?: UseAuthFilesDataOptions): UseAuthFile
   const cooldownResetPendingRef = useRef<Set<string>>(new Set());
   const batchStatusPendingRef = useRef(false);
   const statusPendingRef = useRef({ revision: -1, keys: new Set<string>() });
-  /** 列表请求代号：变更操作会使在途响应过期，防止旧轮询复活已删/已改文件。 */
+  /** Request generation: mutations invalidate in-flight responses so old polls cannot restore
+   * stale files. */
   const loadRequestIdRef = useRef(0);
   const invalidateInFlightLoads = useCallback(() => {
     loadRequestIdRef.current += 1;
@@ -223,7 +225,7 @@ export function useAuthFilesData(options?: UseAuthFilesDataOptions): UseAuthFile
 
       try {
         const data = await authFilesApi.list();
-        if (!isCurrentRequest()) return; // 已被更新的请求/连接/变更取代
+        if (!isCurrentRequest()) return; // Superseded by a newer request, connection, or mutation.
         setFiles(data?.files || []);
         setError('');
       } catch (err: unknown) {
@@ -904,7 +906,7 @@ export function useAuthFilesData(options?: UseAuthFilesDataOptions): UseAuthFile
         );
       }
 
-      // 与 batchSetStatus 保持一致：批量动作完成后清空选择
+      // Match batchSetStatus: clear selection after bulk actions finish.
       deselectAll();
     },
     [deselectAll, showNotification, t]

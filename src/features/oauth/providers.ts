@@ -6,7 +6,7 @@ import iconMeta from '@/assets/icons/meta.svg';
 import iconCodex from '@/assets/icons/codex.svg';
 import iconClaude from '@/assets/icons/claude.svg';
 import iconAntigravity from '@/assets/icons/antigravity.svg';
-// 赞助卡用的 App 图标版：K 与蓝点等比内缩进方块，蓝点不再顶出圆角
+// Tile icon: inset the K and blue dot proportionally so the dot stays inside the corners.
 import iconKimiTileBlack from '@/assets/icons/kimi-tile-black.svg';
 import iconKimiTileWhite from '@/assets/icons/kimi-tile-white.svg';
 import iconGrok from '@/assets/icons/grok.svg';
@@ -16,19 +16,21 @@ import iconDevinDark from '@/assets/icons/devin-dark.svg';
 
 export type ThemedIcon = string | { light: string; dark: string };
 
-/** 设备码流程会返回 user_code；浏览器流程依赖回调（本地自动 / 远程手动粘贴）。 */
+/** Device-code flows return user_code; browser flows use automatic local or pasted remote
+ * callbacks. */
 export type OAuthFlowKind = 'device' | 'browser';
 
 export interface BuiltInOAuthProviderCard {
   kind: 'builtin';
   id: BuiltInOAuthProvider;
-  /** 磁贴短名：品牌名是常量（与仪表盘 providerLabel 一致），区域站点走 i18n。 */
+  /** Short tile name: constant brand names match dashboard providerLabel; regional sites use
+   * i18n. */
   label: string | { key: string };
-  /** 对话框标题，沿用 `auth_login.<id>_oauth_title`。 */
+  /** Dialog title, reusing auth_login.<id>_oauth_title. */
   titleKey: string;
   icon: ThemedIcon;
   flow: OAuthFlowKind;
-  /** 区分同品牌的不同站点，磁贴副行展示。 */
+  /** Distinguish sites of the same brand in the tile's secondary line. */
   domain?: string;
 }
 
@@ -113,7 +115,7 @@ export const OAUTH_PROVIDERS: BuiltInOAuthProviderCard[] = [
 
 const BUILTIN_PROVIDER_IDS = new Set<string>(OAUTH_PROVIDERS.map((provider) => provider.id));
 
-/** 后端接受手动回调提交的内置提供商；插件提供商一律允许。 */
+/** Built-in providers accepting manual callbacks; plugin providers are always allowed. */
 export const CALLBACK_SUPPORTED = new Set<string>([
   'codex',
   'anthropic',

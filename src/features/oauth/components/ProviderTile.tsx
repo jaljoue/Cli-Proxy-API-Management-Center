@@ -4,7 +4,8 @@ import type { ProviderFlowState } from '../hooks/useOAuthFlows';
 import { BrandGlyph } from './BrandGlyph';
 import styles from './ProviderTile.module.scss';
 
-/** 首屏磁贴级联：起点让位给头部（140ms），级差 30ms，整组封顶 360ms。 */
+/** Initial tile stagger: start after the header at 140ms, add 30ms per tile, cap the group at
+ * 360ms. */
 const TILE_BASE_DELAY_MS = 140;
 const TILE_STAGGER_MS = 30;
 const TILE_MAX_DELAY_MS = 360;
@@ -20,8 +21,9 @@ export interface ProviderTileProps {
 }
 
 /**
- * 提供商磁贴：整块可点（stretched button），点击即开始登录并打开授权对话框。
- * 副行平时说明登录方式，登录进行中改为实时状态 —— 对话框关着也能看到后台进度。
+ * Provider tile: a stretched button starts login and opens the authorization dialog.
+ * The secondary line switches from login method to live status, visible even with the dialog
+ * closed.
  */
 export function ProviderTile({
   label,
@@ -33,7 +35,7 @@ export function ProviderTile({
   onOpen,
 }: ProviderTileProps) {
   const captionId = useId();
-  // 挂载时捕获延迟：之后的重渲染（状态轮询）不重播入场
+  // Capture delay on mount; later polling rerenders must not replay entry animation.
   const [enterDelay] = useState(
     () => `${Math.min(TILE_BASE_DELAY_MS + index * TILE_STAGGER_MS, TILE_MAX_DELAY_MS)}ms`
   );

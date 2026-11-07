@@ -1,5 +1,6 @@
 /**
- * Codex 额度渲染体：套餐 chip 行（档位见 cardTier.ts）、重置积分明细、用量窗口水位条。
+ * Codex quota body: plan chips, reset-credit details, and usage-window bars. See cardTier.ts for
+ * tiers.
  */
 
 import { useMemo } from 'react';

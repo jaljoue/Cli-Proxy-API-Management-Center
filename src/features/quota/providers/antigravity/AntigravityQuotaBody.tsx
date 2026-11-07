@@ -1,5 +1,5 @@
 /**
- * Antigravity 额度渲染体：套餐 chip 行（档位见 cardTier.ts）+ 分组水位条。
+ * Antigravity quota body: plan chips and group quota bars. See cardTier.ts for tiers.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -110,7 +110,8 @@ export function AntigravityQuotaBody({ quota, classes }: QuotaBodyProps<Antigrav
       ),
     [quota.groups]
   );
-  // 首屏直接显示准确文案；后续 effect 会在最近的分钟边界更新并重新排程。
+  // Show accurate text on the first render; the effect updates and reschedules at the next minute
+  // boundary.
   const [nowMs, setNowMs] = useState(() => Date.now() + serverTimeOffsetMs);
 
   useEffect(() => {

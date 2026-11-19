@@ -28,15 +28,17 @@ export function OpencodeGoQuotaBody({ quota, classes }: QuotaBodyProps<OpencodeG
     <>
       {planLabel && (
         <div className={classes.codexPlan}>
-          <span className={classes.codexPlanLabel}>{t('opencode_go_quota.plan_label')}</span>
-          <span
-            className={
-              isOpencodeGoPremiumPlan(quota.planType)
-                ? classes.premiumPlanValue
-                : classes.codexPlanValue
-            }
-          >
-            {planLabel}
+          <span className={classes.codexPlanItem}>
+            <span className={classes.codexPlanLabel}>{t('opencode_go_quota.plan_label')}</span>
+            <span
+              className={
+                isOpencodeGoPremiumPlan(quota.planType)
+                  ? classes.premiumPlanValue
+                  : classes.codexPlanValue
+              }
+            >
+              {planLabel}
+            </span>
           </span>
         </div>
       )}

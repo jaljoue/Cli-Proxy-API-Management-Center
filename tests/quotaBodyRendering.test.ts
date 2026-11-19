@@ -249,13 +249,19 @@ describe('OpencodeGoQuotaBody', () => {
     ],
   };
 
-  test('shows Go Plus as a premium plan above the meters', () => {
-    const markup = renderToStaticMarkup(createElement(OpencodeGoQuotaBody, { quota, classes }));
+  test.each([
+    ['go-plus', 'Go Plus', 'premiumPlanValue'],
+    ['go', 'Go', 'codexPlanValue'],
+  ])('shows %s in the shared plan chip above the meters', (planType, label, valueClass) => {
+    const markup = renderToStaticMarkup(
+      createElement(OpencodeGoQuotaBody, { quota: { ...quota, planType }, classes })
+    );
+    const chip =
+      '<span class="codexPlanItem"><span class="codexPlanLabel">Plan</span>' +
+      `<span class="${valueClass}">${label}</span></span>`;
 
-    expect(markup).toContain('Plan');
-    expect(markup).toContain('premiumPlanValue');
-    expect(markup).toContain('Go Plus');
-    expect(markup.indexOf('Go Plus')).toBeLessThan(markup.indexOf('Weekly limit'));
+    expect(markup).toContain(chip);
+    expect(markup.indexOf(chip)).toBeLessThan(markup.indexOf('Weekly limit'));
   });
 
   test('omits the plan row when the key has no Console access', () => {
